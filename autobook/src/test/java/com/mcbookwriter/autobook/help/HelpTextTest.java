@@ -18,6 +18,7 @@ class HelpTextTest {
         assertFalse(lines.isEmpty());
         String text = String.join("\n", lines);
         assertTrue(text.contains("/autobook add"));
+        assertTrue(text.contains("/autobook jobs"));
         assertTrue(text.contains("/autobook stop"));
         assertTrue(text.contains("/autobook help"));
         assertTrue(lines.get(0).startsWith("AutoBook "));

@@ -30,6 +30,12 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from ..linkage import (
+    autobook_compat,
+    current_job_problem,
+    describe_status,
+    read_status,
+)
 from ..llm import BOOKFORGE_ROOT, load_settings
 from ..manifest import validate_job_data
 from .help_content import build_help_html
@@ -426,6 +432,28 @@ class MainWindow(QMainWindow):
         install_layout.addWidget(self.install_game_button, 1, 2)
         install_layout.addWidget(self.install_button, 2, 1, 1, 2)
         layout.addWidget(install_group)
+
+        link_group = QGroupBox("游戏联动（只读）")
+        link_layout = QVBoxLayout(link_group)
+        self.link_version_label = QLabel("尚未读取 AutoBook 版本。")
+        self.link_version_label.setWordWrap(True)
+        self.link_status_label = QLabel("")
+        self.link_status_label.setWordWrap(True)
+        self.link_status_label.setTextInteractionFlags(
+            Qt.TextInteractionFlag.TextSelectableByMouse
+        )
+        link_row = QHBoxLayout()
+        self.link_refresh_button = QPushButton("刷新联动状态")
+        self.link_refresh_button.setToolTip(
+            "读取 游戏目录\\autobook\\status.json 与 mods/ 中的 AutoBook jar 版本；"
+            "只读展示，不控制游戏内 start/pause/stop。"
+        )
+        link_row.addWidget(self.link_refresh_button)
+        link_row.addStretch(1)
+        link_layout.addWidget(self.link_version_label)
+        link_layout.addWidget(self.link_status_label)
+        link_layout.addLayout(link_row)
+        layout.addWidget(link_group)
         layout.addStretch(1)
 
         self.profile_combo.currentIndexChanged.connect(self._load_profile)
@@ -436,6 +464,7 @@ class MainWindow(QMainWindow):
         self.install_job_button.clicked.connect(self._browse_install_job)
         self.install_game_button.clicked.connect(self._browse_game_dir)
         self.install_button.clicked.connect(self._install_job)
+        self.link_refresh_button.clicked.connect(self._refresh_linkage)
         return widget
 
     def _build_help_tab(self) -> QWidget:
@@ -475,6 +504,8 @@ class MainWindow(QMainWindow):
     def _on_tab_changed(self, index: int) -> None:
         if self.tabs.widget(index) is self._help_tab:
             self._refresh_help()
+        elif self.tabs.widget(index) is self._config_tab:
+            self._refresh_linkage()
 
     def _refresh_help(self) -> None:
         self.help_browser.setHtml(build_help_html(self.install_game_edit.text()))
@@ -536,6 +567,40 @@ class MainWindow(QMainWindow):
         self._ui_settings.setValue("paths/input", self.input_edit.text().strip())
         self._ui_settings.setValue("paths/output", self.output_edit.text().strip())
         self._ui_settings.setValue("paths/game", self.install_game_edit.text().strip())
+        self._refresh_linkage()
+
+    def _refresh_linkage(self) -> None:
+        game_text = self.install_game_edit.text().strip()
+        if not game_text:
+            self.link_version_label.setText("未设置游戏目录：请在上方选择包含 mods/ 与 config/ 的目录。")
+            self.link_status_label.setText("")
+            return
+        game_dir = Path(game_text)
+        if not game_dir.is_dir():
+            self.link_version_label.setText(f"游戏目录不存在：{game_dir}")
+            self.link_status_label.setText("")
+            return
+
+        state, message = autobook_compat(game_dir)
+        prefix = "AutoBook 版本：" if state == "ok" else "AutoBook 版本提示："
+        self.link_version_label.setText(prefix + message)
+
+        status = read_status(game_dir)
+        if status is None:
+            self.link_status_label.setText(
+                "未读取到 autobook/status.json：游戏未运行，或 AutoBook jar 低于 "
+                "0.12.0（该版本才写入联动状态）。"
+            )
+            return
+        lines = [f"运行状态：{describe_status(status)}"]
+        if status.updated_at:
+            lines.append(f"更新时间：{status.updated_at}")
+        if status.autobook_version:
+            lines.append(f"模组报告版本：{status.autobook_version}")
+        problem = current_job_problem(status, game_dir)
+        if problem:
+            lines.append(f"兼容性提示：{problem}")
+        self.link_status_label.setText("\n".join(lines))
 
     # ---------- prepare ----------
 
@@ -1079,13 +1144,28 @@ class MainWindow(QMainWindow):
             QMessageBox.warning(self, "缺少路径", "请选择 job.json 与游戏目录。")
             return
         try:
-            destination = install_job(Path(job_text), Path(game_text))
+            outcome = install_job(Path(job_text), Path(game_text))
         except Exception as error:
             QMessageBox.critical(self, "安装失败", str(error))
             return
-        self.config_status.setText(f"已安装: {destination}")
-        self._append_log(f"已安装: {destination}")
-        QMessageBox.information(self, "安装完成", f"已复制到：\n{destination}")
+        title = outcome.destination.stem
+        details = [
+            "已安装到：",
+            str(outcome.destination),
+            "",
+            f"任务：{title}（{outcome.book_count} 本 / {outcome.total_pages} 页，"
+            f"{'已校订' if outcome.reviewed else '未校订'}）",
+            f"元数据：{outcome.meta_path}",
+        ]
+        if outcome.backup_path is not None:
+            details.append(f"已覆盖同名任务，旧文件备份为：{outcome.backup_path}")
+        details.extend(["", f"游戏内执行：/autobook add {title}", "然后用 /autobook start 开始。"])
+        self.config_status.setText(f"已安装: {outcome.destination}")
+        self._append_log(
+            f"已安装: {outcome.destination}（{outcome.book_count} 本 / {outcome.total_pages} 页）"
+        )
+        self._refresh_linkage()
+        QMessageBox.information(self, "安装完成", "\n".join(details))
 
     # ---------- lifecycle ----------
 

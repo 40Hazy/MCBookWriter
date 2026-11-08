@@ -5,7 +5,7 @@ Minecraft 批量写书工具链，由两个独立组件组成：
 - **BookForge（Python）**：读取 txt/EPUB/FB2/DOCX 等书稿，完成编码识别、正文清洗、章节识别、分段，生成可校验的 `job.json`。
 - **AutoBook（Fabric 客户端模组）**：读取 `job.json`，按 Minecraft 书本实际排版分页、自动续本，循环写入并签名，支持进度保存与断点续写。
 
-当前版本：**AutoBook 0.11.0**、**BookForge 0.6.0**。支持 Minecraft **1.21.5–1.21.11** 与 **26.1、26.1.1、26.1.2、26.2**，每个版本使用对应的 AutoBook jar。单本写入已在 1.21.8 服务器实测通过；0.3.0 改进跨章节打包与慢速重试，0.4.0 增加标点断书与页数配置，0.5.0 增加内容校验、失败自恢复与配置命令，0.6.0 增加多任务队列，0.7.0 增加游戏内配置界面并支持 Minecraft 1.21.5–1.21.8，0.8.0 增加 Minecraft 26.1.x（26.1.2）支持，0.8.1 修复 `/autobook ui` 不显示界面，0.8.2 修复配置界面文字不可见，0.8.3 将数据目录改为游戏目录下的 `autobook/` 并在加载模组时自动创建，0.9.0 增加整书 SHA-256 摘要校验与已验证本数统计，0.11.0 合并单本与队列为统一运行流水线（add/start/pause/resume/cancel/stop/remove/retry），0.11.0 增加 `/autobook help` 与游戏内说明页；BookForge 0.3.1 增加电子书导入、LLM 抽样核验与补丁 diff，0.4.0 增加桌面 GUI（导入与生成 job），0.4.1 增加成本预估、profile 查看并修正古籍通假字误报，0.5.0 完成 LLM 报告/补丁审阅、配置编辑与 PyInstaller 打包，0.6.0 增加 API key 的 GUI/CLI 管理与 profile key_file。
+当前版本：**AutoBook 0.12.0**、**BookForge 0.7.0**。支持 Minecraft **1.21.5–1.21.11** 与 **26.1、26.1.1、26.1.2、26.2**，每个版本使用对应的 AutoBook jar。单本写入已在 1.21.8 服务器实测通过；0.3.0 改进跨章节打包与慢速重试，0.4.0 增加标点断书与页数配置，0.5.0 增加内容校验、失败自恢复与配置命令，0.6.0 增加多任务队列，0.7.0 增加游戏内配置界面并支持 Minecraft 1.21.5–1.21.8，0.8.0 增加 Minecraft 26.1.x（26.1.2）支持，0.8.1 修复 `/autobook ui` 不显示界面，0.8.2 修复配置界面文字不可见，0.8.3 将数据目录改为游戏目录下的 `autobook/` 并在加载模组时自动创建，0.9.0 增加整书 SHA-256 摘要校验与已验证本数统计，0.11.0 合并单本与队列为统一运行流水线（add/start/pause/resume/cancel/stop/remove/retry），0.11.0 增加 `/autobook help` 与游戏内说明页，0.12.0 增加任务元数据、`/autobook jobs` 与 `status.json` 联动；BookForge 0.3.1 增加电子书导入、LLM 抽样核验与补丁 diff，0.4.0 增加桌面 GUI（导入与生成 job），0.4.1 增加成本预估、profile 查看并修正古籍通假字误报，0.5.0 完成 LLM 报告/补丁审阅、配置编辑与 PyInstaller 打包，0.6.0 增加 API key 的 GUI/CLI 管理与 profile key_file，0.7.0 增加安装元数据、安装校验与 GUI 游戏联动区。
 
 ## 核心能力
 
@@ -21,6 +21,8 @@ Minecraft 批量写书工具链，由两个独立组件组成：
 - 循环写入整个任务的所有书，不再只写第一本。
 - 进度写入 `autobook/state/<planHash>.json`，支持 `/autobook resume` 断点续写。
 - 统一运行流水线：单本只是“一个任务的运行”，多任务用 `add` 逐个加入；状态保存到 `autobook/run.json`，重启后可继续。
+- 任务元数据联动：BookForge 安装 job 时写入 `autobook/jobs/<任务名>.meta.json`，游戏内 `/autobook jobs` 可查看已校订状态、书数与页数。
+- 运行状态联动：AutoBook 原子写入 `autobook/status.json`，BookForge GUI 的“游戏联动（只读）”区可刷新查看进度、校验本数与 jar 版本。
 - 成书标题与页数重复检测：已签名的书不会重复印刷。
 - 空书耗尽时自动暂停，拾取到新空书后自动继续。
 - 可选：写完立即丢出成书，便于红石/漏斗自动收集。
@@ -102,8 +104,8 @@ powershell -ExecutionPolicy Bypass -File .\scripts\build-gui.ps1 -InstallDeps
 ### 2. 安装模组
 
 1. 安装 Fabric Loader 0.16.14+、Fabric API 0.136.1+1.21.8、Java 21。
-2. 将 `dist/autobook-0.11.0.jar`（Minecraft 1.21.8）放入客户端 `mods/`。
-   - 其他版本：运行 `scripts/build-multi.ps1` 生成 `autobook-0.11.0-mc<版本>.jar`，安装与游戏版本匹配的那个。
+2. 将 `dist/autobook-0.12.0.jar`（Minecraft 1.21.8）放入客户端 `mods/`。
+   - 其他版本：运行 `scripts/build-multi.ps1` 生成 `autobook-0.12.0-mc<版本>.jar`，安装与游戏版本匹配的那个。
    - 当前支持 1.21.5、1.21.6、1.21.7、1.21.8、1.21.11，以及 26.1、26.1.1、26.1.2、26.2。
    - 1.21.11：Java 21、Fabric Loader 0.20.1、Fabric API 0.141.6+1.21.11。
    - 26.1 / 26.1.1 / 26.1.2：Java 25、Fabric Loader 0.20.1、Fabric API 0.155.3+26.1.2。
@@ -120,6 +122,7 @@ powershell -ExecutionPolicy Bypass -File .\scripts\build-gui.ps1 -InstallDeps
 /autobook start           开始当前运行
 /autobook start 三体1     新建单任务运行并开始（等价于 add + start）
 /autobook list            查看运行与全部任务状态
+/autobook jobs            查看已安装任务与元数据（校订状态、书数、页数）
 /autobook status          查看当前任务、页数与校验统计
 /autobook pause           可恢复暂停
 /autobook resume          从暂停继续（旧的 resume <任务名> 仍可用）
@@ -153,7 +156,7 @@ powershell -ExecutionPolicy Bypass -File .\scripts\build.ps1 -GameDir "F:\Minecr
 powershell -ExecutionPolicy Bypass -File .\scripts\release.ps1
 ```
 
-`build.ps1 -GameDir` 安装的是当前 `gradle.properties` 对应版本（默认 1.21.8）。26.x 请手动复制 `dist/autobook-0.11.0-mc26.x.jar` 到该客户端 `mods/`。
+`build.ps1 -GameDir` 安装的是当前 `gradle.properties` 对应版本（默认 1.21.8）。26.x 请手动复制 `dist/autobook-0.12.0-mc26.x.jar` 到该客户端 `mods/`。
 
 安装脚本会创建 `autobook/jobs`、`state` 目录，并提示任务数量。
 

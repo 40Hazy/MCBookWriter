@@ -50,6 +50,9 @@ public final class HelpText {
             "命令使用不含 .json 的任务名，支持中文",
             "",
             "job 由 BookForge 生成，GUI 也可直接安装",
+            "/autobook jobs 列出已安装任务与元数据",
+            "安装时可能同时写入 <任务名>.meta.json（书数/页数/是否已校订）",
+            "无 meta 的旧 job 仍可运行，只是书数/页数显示为未知",
             "修改 job 内容或 options 会改变 planHash，该任务会从头开始",
             "默认 skipExistingBooks=true，会跳过已签名的同名同页数成书"
         ));
@@ -127,6 +130,7 @@ public final class HelpText {
         lines.add("  /autobook add <任务>       加入当前运行，可多次");
         lines.add("  /autobook start [任务]     启动；带任务=add+start");
         lines.add("  /autobook list / status    查看运行与任务状态");
+        lines.add("  /autobook jobs             查看已安装任务与元数据");
         lines.add("  /autobook pause / resume   可恢复暂停");
         lines.add("  /autobook cancel [任务]    取消任务，运行继续下一个");
         lines.add("  /autobook stop             终止整条运行(CANCELLED)");

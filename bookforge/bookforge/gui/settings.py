@@ -10,6 +10,7 @@ from ..keymanagement import (
     save_key as save_key_file,
     source_label,
 )
+from ..linkage import install_job
 from ..llm import BOOKFORGE_ROOT, DEFAULT_CONFIG_FILE, OpenAiCompatibleClient, load_settings
 
 PROFILE_FIELDS = (
@@ -155,21 +156,6 @@ def test_connection(settings) -> str:
     client = OpenAiCompatibleClient(settings)
     content = client.complete("你是连接测试助手。", "只回复 OK。")
     return content.strip()[:200]
-
-
-def install_job(job_path: Path, game_dir: Path) -> Path:
-    job = json.loads(job_path.read_text(encoding="utf-8"))
-    title = str(job.get("titleBase", "")).strip()
-    if not title:
-        raise ValueError("job 缺少 titleBase")
-    jobs_dir = game_dir / "autobook" / "jobs"
-    jobs_dir.mkdir(parents=True, exist_ok=True)
-    destination = jobs_dir / f"{title}.json"
-    destination.write_text(
-        json.dumps(job, ensure_ascii=False, indent=2),
-        encoding="utf-8",
-    )
-    return destination
 
 
 def load_test_settings(name: str):

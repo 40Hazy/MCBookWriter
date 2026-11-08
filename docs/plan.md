@@ -16,7 +16,7 @@
 | P4.3 | LLM 质量校准、diff、全量三体1、游戏内验证 | 进行中：三体1 已验 3/13，剩余异常路径与配置验证 |
 | P5 | 多书适配、任务队列、配置 UI、发布 | 已完成（1.21.5–1.21.11 + 26.1–26.2，0.10.0 统一运行流水线，P5.5 发布准备完成） |
 | P6 | BookForge 桌面 GUI（导入/核验/补丁） | 已完成 G1–G5（BookForge 0.5.0） |
-| P7 | 帮助、API key 管理与 AutoBook/BookForge 联动 | 进行中：P7.1–P7.3 与 P5.5 发布准备完成，P7.4 联动是下一步 |
+| P7 | 帮助、API key 管理与 AutoBook/BookForge 联动 | 已完成：P7.1–P7.4 与 P5.5 发布准备完成（AutoBook 0.12.0 / BookForge 0.7.0） |
 
 ## P0：脚手架
 
@@ -623,13 +623,23 @@ bookforge/workflow.py  # CLI/GUI 共用 prepare_input
 - 版本：AutoBook 0.12.0、BookForge 0.7.0。
 - 验收：GUI 安装后 `/autobook jobs` 能显示元数据；游戏内运行进度能在 GUI 中刷新看到；版本不匹配有明确提示；保留旧 job（无 meta）仍可运行。
 
+施工结果（2026-11-08，AutoBook 0.12.0 + BookForge 0.7.0）：
+
+- BookForge 新增 `bookforge/linkage.py`：meta 估算/写入、安装前 schema/书名/目录校验、同名覆盖保留 `<任务名>.json.bak`、job 与 meta 原子写入、status 读取、mods/ 中 AutoBook jar 版本检测与兼容提示。GUI 的 `install_job` 改为复用它。
+- BookForge GUI“配置”页新增“游戏联动（只读）”区：刷新显示运行状态、进度、校验本数、更新时间与 jar 版本；jar 缺失/版本过低或当前 job 不兼容时提示；安装完成提示书数/页数、`.bak` 与 `/autobook add <任务名>`；帮助页第 9 节更新。
+- AutoBook 新增 `JobMeta/InstalledJob/JobCatalog` 与 `/autobook jobs`：显示已校订/未校订、书数、页数、更新时间；meta 缺失、损坏或 schema 不匹配时忽略并回退读 job，旧 job 仍可运行。
+- AutoBook 新增 `StatusSnapshot/StatusStore` 并接入 `RunRunner`：状态变化立即、运行中 1 秒节流（最长 5 秒心跳）原子写 `autobook/status.json`；写入失败只记日志。
+- 容错：meta/status 独立 schema v1，未知字段忽略，缺失/损坏降级；`run.json` 仍由 AutoBook 独占写，BookForge 只读 status。
+- 验证：pytest 91 项通过；JUnit 62 项通过（1.21.8 与 26.1.2），新增 JobCatalog 4 项、StatusStore 3 项；命令树与帮助测试覆盖 `/autobook jobs`。
+- 待办：真实客户端联调 `/autobook jobs` 与 GUI 刷新；人工验证 jar 版本过低、status 缺失与旧 job 无 meta 的提示文案。
+
 ### 施工顺序与版本安排
 
 1. **P7.2 API key 管理**：涉及安全与发布阻塞项，先做；与 P7.3 合并为 BookForge 0.6.0。
 2. **P7.1 AutoBook 帮助**：AutoBook 0.11.0，独立于联动，先行可用。
 3. **P7.3 BookForge 帮助中心**：与 P7.2 同版本发布，形成完整 GUI 引导。
 4. **P5.5 发布准备**：在 P7.1–P7.3 完成后执行，把帮助与密钥管理纳入发布验收。
-5. **P7.4 联动**：AutoBook 0.12.0 + BookForge 0.7.0；可作为发布前最后一项或紧随发布后的增强。
+5. **P7.4 联动**：AutoBook 0.12.0 + BookForge 0.7.0；已完成，待真实客户端联调。
 
 总体验收：
 

@@ -99,13 +99,24 @@ def test_profile_key_file_roundtrip(tmp_path: Path) -> None:
 def test_install_job_uses_title_base(tmp_path: Path) -> None:
     job_file = tmp_path / "job.json"
     job_file.write_text(
-        json.dumps({"version": 1, "titleBase": "三体1", "segments": []}, ensure_ascii=False),
+        json.dumps(
+            {
+                "version": 1,
+                "titleBase": "三体1",
+                "pageLimit": 100,
+                "sourceHash": "a" * 64,
+                "segments": [{"index": 1, "text": "字" * 168}],
+            },
+            ensure_ascii=False,
+        ),
         encoding="utf-8",
     )
     game_dir = tmp_path / "game"
+    game_dir.mkdir()
 
-    destination = install_job(job_file, game_dir)
+    outcome = install_job(job_file, game_dir)
 
-    assert destination == game_dir / "autobook" / "jobs" / "三体1.json"
-    assert destination.is_file()
-    assert json.loads(destination.read_text(encoding="utf-8"))["titleBase"] == "三体1"
+    assert outcome.destination == game_dir / "autobook" / "jobs" / "三体1.json"
+    assert outcome.destination.is_file()
+    assert outcome.meta_path.is_file()
+    assert json.loads(outcome.destination.read_text(encoding="utf-8"))["titleBase"] == "三体1"

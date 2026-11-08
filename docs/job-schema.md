@@ -44,6 +44,42 @@ AutoBook 读取的任务文件格式版本为 `1`，JSON Schema 见 [job.schema.
 | `segments[].chapter` | string | 否 | — | 来源章节标题，仅用于报告/日志 |
 | `segments[].text` | string | 是 | 非空 | 段落正文，可含 `\n` |
 
+## 任务元数据（meta.json）
+
+BookForge GUI 安装 job 时会同时写入 `autobook/jobs/<任务名>.meta.json`，供 BookForge GUI 与 `/autobook jobs` 展示。它是**独立 schema v1**，不参与模组的 job 校验；文件缺失、损坏或 `schema` 不为 `1` 时，模组会忽略元数据并直接读取 job。
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| `schema` | integer | 固定为 `1` |
+| `titleBase` | string | 书名基名，应与 job 一致 |
+| `bookCount` | integer | BookForge 估算的书数（按字符估算，非游戏内实际分页） |
+| `totalPages` | integer | BookForge 估算的总页数 |
+| `pageLimit` | integer | 生效的每本页数上限 |
+| `reviewed` | boolean | 是否已校订（`options.llmApplied` 或来自 `reviewed/` 目录） |
+| `llmApplied` | boolean | 是否应用过 LLM 补丁 |
+| `sourceHash` | string | 原始书稿 SHA-256，与 job 一致 |
+| `generatedAt` | string | 安装/生成时间（ISO 8601） |
+| `generatorVersion` | string | 写入该 meta 的 BookForge 版本 |
+
+## 运行状态（status.json）
+
+AutoBook 0.12.0 起在状态变化时立即、运行中按节流周期原子写入 `autobook/status.json`（独立 schema v1），供 BookForge 只读展示：
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| `schema` | integer | 固定为 `1` |
+| `runStatus` | string | `created/planning/queuing/running/paused/completed/failed/cancelled` |
+| `currentJob` | string | 当前任务名；没有当前任务时为空 |
+| `nextIndex` | integer | 下一本序号（从 0 开始） |
+| `completedBooks` | integer | 已完成本数 |
+| `totalBooks` | integer | 当前任务总本数 |
+| `verifiedBooks` | integer | 内容校验通过的本数 |
+| `reason` | string | 暂停/失败原因 |
+| `updatedAt` | string | 最近写入时间（ISO 8601） |
+| `autoBookVersion` | string | 写入该文件的 AutoBook 版本 |
+
+`run.json` 仍由 AutoBook 独占写入；BookForge 只读取 `status.json`，不写 `run.json`，也不控制游戏内运行。
+
 ## 分段与分页关系
 
 - BookForge 默认把超过 12000 字符的章节切分为多个 segment。

@@ -4,6 +4,9 @@ import com.mcbookwriter.autobook.compat.ClientCommandsCompat;
 import com.mcbookwriter.autobook.config.AutoBookConfig;
 import com.mcbookwriter.autobook.gui.UiScreens;
 import com.mcbookwriter.autobook.help.HelpText;
+import com.mcbookwriter.autobook.job.InstalledJob;
+import com.mcbookwriter.autobook.job.JobCatalog;
+import com.mcbookwriter.autobook.job.JobMeta;
 import com.mcbookwriter.autobook.job.JobRunner;
 import com.mcbookwriter.autobook.layout.PlannedBook;
 import com.mcbookwriter.autobook.run.RunJob;
@@ -72,6 +75,8 @@ public final class AutoBookCommand {
                     .executes(context -> status(context.getSource())))
                 .then(ClientCommandsCompat.literal("list")
                     .executes(context -> list(context.getSource())))
+                .then(ClientCommandsCompat.literal("jobs")
+                    .executes(context -> jobs(context.getSource())))
                 .then(ClientCommandsCompat.literal("cancel")
                     .executes(context -> cancel(context.getSource(), null))
                     .then(ClientCommandsCompat.argument("job", StringArgumentType.greedyString())
@@ -268,6 +273,63 @@ public final class AutoBookCommand {
     private static int list(FabricClientCommandSource source) {
         source.sendFeedback(Component.literal("AutoBook " + RunRunner.get().describe()));
         return 1;
+    }
+
+    private static int jobs(FabricClientCommandSource source) {
+        try {
+            List<InstalledJob> jobs = JobCatalog.defaultCatalog().list();
+            if (jobs.isEmpty()) {
+                source.sendFeedback(Component.literal(
+                    "AutoBook: autobook/jobs 下没有任务；请用 BookForge 安装或放入 job.json"
+                ));
+                return 0;
+            }
+            source.sendFeedback(Component.literal(
+                "AutoBook 已安装任务（" + jobs.size() + "）："
+            ));
+            boolean legacy = false;
+            for (InstalledJob job : jobs) {
+                if (!job.error.isBlank()) {
+                    source.sendFeedback(Component.literal(
+                        "  " + job.name + " - 无法读取: " + job.error
+                    ));
+                    continue;
+                }
+                JobMeta meta = job.meta;
+                boolean reviewed = meta != null ? meta.reviewed : job.llmApplied;
+                StringBuilder line = new StringBuilder("  ")
+                    .append(job.name)
+                    .append(" [").append(reviewed ? "已校订" : "未校订").append("]");
+                if (meta != null) {
+                    line.append(" ").append(meta.bookCount).append(" 本 / ")
+                        .append(meta.totalPages).append(" 页");
+                    if (!meta.generatedAt.isBlank()) {
+                        line.append("，更新 ").append(meta.generatedAt);
+                    }
+                } else {
+                    legacy = true;
+                    line.append(" 书数/页数未知");
+                    if (!job.updatedAt.isBlank()) {
+                        line.append("，更新 ").append(job.updatedAt);
+                    }
+                }
+                if (job.pageLimit > 0) {
+                    line.append("，每本上限 ").append(job.pageLimit).append(" 页");
+                }
+                source.sendFeedback(Component.literal(line.toString()));
+            }
+            if (legacy) {
+                source.sendFeedback(Component.literal(
+                    "AutoBook: 部分任务无 meta（旧版安装），仍可 /autobook add 使用"
+                ));
+            }
+            source.sendFeedback(Component.literal(
+                "AutoBook: 用 /autobook add <任务名> 加入运行，再 /autobook start"
+            ));
+            return jobs.size();
+        } catch (Exception error) {
+            return fail(source, error);
+        }
     }
 
     private static int cancel(FabricClientCommandSource source, String jobName) {

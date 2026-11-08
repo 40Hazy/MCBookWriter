@@ -23,7 +23,7 @@ powershell -ExecutionPolicy Bypass -File .\scripts\release.ps1
 
 ## 2. GitHub Release
 
-1. 打标签：`git tag autobook-<版本>`（如 `autobook-0.11.0`），推送标签。
+1. 打标签：`git tag autobook-<版本>`（如 `autobook-0.12.0`），推送标签。
 2. 新建 Release，标题 `MCBookWriter AutoBook <版本> / BookForge <版本>`。
 3. 正文使用发布包中的 `RELEASE_NOTES.md`。
 4. 上传资产：

@@ -21,6 +21,7 @@ public final class RunRunner {
 
     private final RunStore store = RunStore.defaultStore();
     private final StateStore stateStore = StateStore.defaultStore();
+    private final StatusStore statusStore = StatusStore.defaultStore();
     private RunState state;
     private boolean armed;
 
@@ -384,11 +385,13 @@ public final class RunRunner {
     public void tick(Minecraft client) {
         RunState run = state();
         if (!RunState.RUN_RUNNING.equals(run.status)) {
+            statusStore.tick(run);
             return;
         }
         RunJob job = run.current();
         if (job == null) {
             finishOrAdvance(run, RunState.RUN_COMPLETED);
+            statusStore.tick(run);
             return;
         }
 
@@ -423,6 +426,7 @@ public final class RunRunner {
             }
             default -> updateProgress(run, job, progress);
         }
+        statusStore.tick(run);
     }
 
     public String describe() {
@@ -729,6 +733,7 @@ public final class RunRunner {
     private void save() throws IOException {
         state.updatedAt = now();
         store.save(state);
+        statusStore.writeNow(state);
     }
 
     private void saveQuietly() {

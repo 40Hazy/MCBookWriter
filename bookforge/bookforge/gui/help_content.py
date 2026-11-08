@@ -146,12 +146,18 @@ api.deepseek.com 并同步修改 model。</td></tr>
 <h2>8. 版本与路径信息</h2>
 {{PATH_INFO}}
 
-<h2>9. 游戏联动（规划中）</h2>
+<h2>9. 游戏联动</h2>
 <ul>
-<li>后续版本安装 job 时会同时写入任务元数据（书数、页数、是否已校订），
-并在 GUI 中只读展示游戏内运行进度（autobook/status.json）。</li>
-<li>当前版本请在游戏内用 <code>/autobook list</code> 与
-<code>/autobook status</code> 查看任务与进度。</li>
+<li>安装 job 时会同时写入 <code>autobook/jobs/&lt;书名&gt;.meta.json</code>，
+记录书数、页数、是否已校订与生成器版本；同名覆盖会保留
+<code>&lt;书名&gt;.json.bak</code>。</li>
+<li>AutoBook 0.12.0 起会原子写入 <code>autobook/status.json</code>；
+“配置”页的“游戏联动（只读）”区点击“刷新联动状态”即可查看运行进度、
+校验本数与更新时间，并显示 mods/ 中的 AutoBook jar 版本。</li>
+<li>游戏内用 <code>/autobook jobs</code> 查看已安装任务及元数据；缺少元数据的
+旧 job 仍可正常运行，只是书数/页数显示为未知。</li>
+<li>若提示 jar 版本过低、当前任务文件缺失或 job version 不兼容，请换用
+BookForge 安装的 v1 job，并确认 AutoBook 版本不低于 0.12.0。</li>
 </ul>
 """
 

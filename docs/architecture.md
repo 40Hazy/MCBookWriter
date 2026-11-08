@@ -48,7 +48,7 @@
 
 设计原则：非空白字符尽量保持不丢；只删除明确的广告/导航行；对疑似误删给出警告而不是静默处理。
 
-### 桌面 GUI（BookForge 0.6.0）
+### 桌面 GUI（BookForge 0.7.0）
 
 ```text
 生成        prepare_input → job/report/import

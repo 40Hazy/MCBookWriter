@@ -15,7 +15,7 @@ class AutoBookCommandTreeTest {
         var root = dispatcher.getRoot().getChild("autobook");
         assertNotNull(root, "autobook root");
         for (String name : new String[] {
-            "help", "plan", "add", "start", "resume", "pause", "status", "list",
+            "help", "plan", "add", "start", "resume", "pause", "status", "list", "jobs",
             "cancel", "stop", "remove", "retry", "ui", "config"
         }) {
             assertNotNull(root.getChild(name), name + " command");

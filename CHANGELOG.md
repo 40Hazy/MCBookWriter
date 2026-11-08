@@ -1,5 +1,32 @@
 # 更新日志
 
+## 0.12.0 — 2026-11-08
+
+P7.4：AutoBook ↔ BookForge 文件级联动。只通过 `autobook/` 下的文件契约协作，不引入网络服务；`run.json` 仍由 AutoBook 独占写入。
+
+新增：
+
+- 任务元数据：BookForge 安装 job 时同时写入 `autobook/jobs/<任务名>.meta.json`（schema v1），包含 `titleBase`、`bookCount`、`totalPages`、`pageLimit`、`reviewed`、`llmApplied`、`sourceHash`、`generatedAt`、`generatorVersion`。
+- `/autobook jobs`：列出已安装任务，显示“已校订/未校订”、书数、页数、更新时间与每本页数上限；meta 缺失或损坏时回退直接读取 job，旧 job 仍可运行。
+- 运行状态快照：AutoBook 在状态变化时立即、运行中按 1 秒节流（最长 5 秒心跳）原子写入 `autobook/status.json`（schema v1）：`runStatus`、`currentJob`、`nextIndex`、`completedBooks`、`totalBooks`、`verifiedBooks`、`reason`、`updatedAt`、`autoBookVersion`。
+- 安装校验：BookForge 安装前校验 job schema、书名长度与游戏目录；同名覆盖前保留 `<任务名>.json.bak`；job 与 meta 均原子写入。
+- GUI“游戏联动（只读）”区：刷新读取 status.json，展示运行状态、进度、校验本数、更新时间与 AutoBook jar 版本；jar 缺失/版本过低、当前任务文件缺失或 job version 不兼容时给出明确提示。
+- 兼容容错：meta/status 各自独立 schema v1，未知字段忽略，缺失或损坏时降级，不影响模组启动。
+
+验证：
+
+- pytest 91 项通过（新增 `test_linkage.py`：安装元数据、`.bak`、非法 schema/书名/目录、status 解析与降级、jar 版本与兼容性、当前 job 不兼容）。
+- JUnit 62 项通过（1.21.8 与 26.1.2），新增 `JobCatalogTest` 4 项、`StatusStoreTest` 3 项；命令树与帮助测试已覆盖 `/autobook jobs`。
+- 待真实客户端验证 `/autobook jobs` 展示与 GUI 联动刷新。
+
+## BookForge 0.7.0 — 2026-11-08
+
+P7.4 的 BookForge 侧：安装元数据、校验与游戏联动区。详见上方 0.12.0 条目。
+
+- 新增 `bookforge/linkage.py`：meta 估算与写入、安装校验、status 读取、mods/ 中 AutoBook jar 版本检测与兼容提示；`gui/settings.py` 的 `install_job` 改为复用该模块。
+- GUI“配置”页新增只读联动区与“刷新联动状态”按钮；安装完成提示书数/页数、`.bak` 与 `/autobook add <任务名>`；帮助页第 9 节更新为实际联动说明。
+- 版本号升至 0.7.0，README、usage、plan 与 job-schema 文档同步。
+
 ## 版本适配：1.21.11 与 26.1 / 26.1.1 / 26.2 — 2026-11-08
 
 不改变功能版本号（AutoBook 0.11.0 / BookForge 0.6.0），新增四个 Minecraft 目标版本。
