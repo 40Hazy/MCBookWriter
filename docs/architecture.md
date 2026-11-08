@@ -44,6 +44,7 @@
 | `llm.py` | OpenAI 兼容接口、分块与 `plan_review`、报告/补丁解析、`review_job`、`--estimate` 与 profile 查看 |
 | `keymanagement.py` | key 路径解析（env/profile/全局/默认）、掩码状态、原子保存与清除、最小连接测试 |
 | `patch.py` | 补丁本地硬校验、重叠检测、按偏移应用、统一 diff 生成 |
+| `linkage.py` | 与 AutoBook 的文件级联动：job 安装与 `.meta.json`、`status.json` 读取、jar 版本兼容判断 |
 | `gui/` | PySide6 桌面界面：生成、LLM 核验、补丁审阅、配置、帮助五个标签页；含 workers/models/settings/help_content |
 
 设计原则：非空白字符尽量保持不丢；只删除明确的广告/导航行；对疑似误删给出警告而不是静默处理。
@@ -54,7 +55,7 @@
 生成        prepare_input → job/report/import
 LLM 核验    ReviewWorker → review_job(progress/cancel) → llm_report/llm_patch
 补丁审阅    ApplyWorker → apply_patches(selected) → reviewed/job + diff + patch_apply
-配置        profile 编辑 / 测试连接 / 安装 job / 最近路径
+配置        profile 编辑 / 测试连接 / 安装 job（含 meta） / 联动只读区 / 最近路径
 帮助        内置离线 HTML（help_content）+ 动态版本/路径信息 + 打开目录按钮
 ```
 
@@ -112,8 +113,9 @@ LLM 核验    ReviewWorker → review_job(progress/cancel) → llm_report/llm_pa
 | 类 | 职责 |
 | --- | --- |
 | `AutoBookClient` | 模组入口，注册命令与客户端 tick 回调 |
-| `AutoBookCommand` | `/autobook help/plan/add/start/resume/pause/status/list/cancel/stop/remove/retry/config/ui`（保留旧 `queue` 别名） |
+| `AutoBookCommand` | `/autobook help/plan/add/start/resume/pause/status/list/jobs/cancel/stop/remove/retry/config/ui`（保留旧 `queue` 别名） |
 | `JobLoader` | 从 `autobook/jobs/` 读取并校验 job |
+| `JobMeta` / `InstalledJob` / `JobCatalog` | 读取 BookForge 写入的 `<任务>.meta.json`，列出 `jobs/` 中的任务并标记已校订/兼容性 |
 | `JobRunner` | 统一加载 job、解析 `options` 覆盖、分页并启动 BookWriter，供命令与运行共用 |
 | `BookPlanner` | 将各段页面连续装满每本（不超过 `pageLimit`），可选在句末标点处断书，标题全局连续编号 |
 | `SentenceBreaks` | 判断页面是否以句末标点结束、下一段是否以右引号等收尾字符开头 |
@@ -126,9 +128,10 @@ LLM 核验    ReviewWorker → review_job(progress/cancel) → llm_report/llm_pa
 | `StateStore` / `RunState`（progress） | 单任务进度文件的读写与数据模型 |
 | `PlanDigest` | 对任务名与全部页面内容做 SHA-256，生成计划指纹 |
 | `RunRunner` | 唯一运行流水线：单本与多任务统一，负责状态推进、暂停/取消/终止/重试 |
+| `StatusSnapshot` / `StatusStore` | 原子写入 `autobook/status.json` 的运行快照；状态变化立即写，其余 1 秒节流、最长 5 秒心跳 |
 | `RunStore` / `RunState` / `RunJob` | `autobook/run.json` 的读写、运行与任务状态模型；自动迁移旧 `queue.json` |
 | `AutoBookConfigScreen` | 游戏内配置界面：开关按钮 + 整数输入框，保存复用 `AutoBookConfig.set`（1.21/26.1 各一份渲染实现） |
-| `HelpText` | 帮助内容：概览与 start/run/job/cancel/config/verify/recover 主题，命令与 UI 共用 |
+| `HelpText` | 帮助内容：概览与 start/run/job/jobs/cancel/config/verify/recover 主题，命令与 UI 共用 |
 | `AutoBookHelpScreen` | 分页说明页：按宽度换行、上一页/下一页/返回（1.21/26.1 各一份渲染实现） |
 | `compat/ClientCompat` / `ClientCommandsCompat` | 1.21 与 26.1 的客户端 API 差异封装 |
 | `AutoBookConfig` | 读取/保存 `autobook/config.json`，支持 `/autobook config` |
@@ -349,6 +352,23 @@ segment 2 pages 1..3 ┴→ book 1 (pageLimit=6)
   "updatedAt": "2026-10-25T22:10:00+08:00"
 }
 ```
+
+### 联动文件（AutoBook 0.12.0 / BookForge 0.7.0）
+
+```text
+autobook/jobs/<任务>.json        BookForge 写，AutoBook 读（job schema v1）
+autobook/jobs/<任务>.meta.json   BookForge 写，AutoBook 可选读（meta schema v1）
+autobook/status.json             AutoBook 写，BookForge 只读（status schema v1）
+autobook/run.json                AutoBook 写，BookForge 不写
+```
+
+- `meta.json` 记录 `schema/titleBase/bookCount/totalPages/pageLimit/reviewed/llmApplied/sourceHash/generatedAt/generatorVersion`；同名任务重装时旧 job 先复制为 `<任务>.json.bak`。
+- `status.json` 记录 `schema/runStatus/currentJob/nextIndex/completedBooks/totalBooks/verifiedBooks/reason/updatedAt/autoBookVersion`；状态变化由 `RunRunner.save()` 立即写，`StatusStore.tick()` 平时 1 秒节流、最长 5 秒心跳，写入失败只记日志。
+- 两侧写入均原子替换（Python 临时文件 + `os.replace`；Java 临时文件 + `Files.move(ATOMIC_MOVE)`）。
+- 未知字段一律忽略；meta 缺失或损坏时 job 仍可运行，`/autobook jobs` 的书数/页数显示为未知；meta 的 `schema` 不为 1 时不展示。
+- `job version` 不为 1 时 `JobCatalog` 记录错误但仍列出条目；`/autobook jobs` 提示改用 BookForge 安装的新任务。
+- 兼容门槛：`MIN_AUTOBOOK_VERSION = 0.12.0`；BookForge 从 `mods/autobook*.jar` 的 `fabric.mod.json` 读取版本，低于门槛只提示、不做任何写入。
+- 只读边界：BookForge 不创建、不修改 `run.json`、`state/` 与存档，也不控制游戏内 start/pause/stop；`run.json` 仍由 AutoBook 独占。
 
 ### 暂停类型
 
