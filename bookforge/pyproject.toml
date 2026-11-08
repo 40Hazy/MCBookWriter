@@ -1,0 +1,36 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "bookforge"
+version = "0.6.0"
+description = "Minecraft book preprocessing pipeline"
+requires-python = ">=3.11"
+dependencies = [
+    "charset-normalizer>=3.3",
+    "jsonschema>=4.21",
+    "mobi>=0.4.1",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8",
+]
+gui = [
+    "PySide6-Essentials>=6.7",
+]
+package = [
+    "pyinstaller>=6.10",
+]
+
+[project.scripts]
+bookforge = "bookforge.cli:main"
+bookforge-gui = "bookforge.gui.app:main"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["bookforge*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

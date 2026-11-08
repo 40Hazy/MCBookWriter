@@ -1,0 +1,3 @@
+AutoBook diagnostic test page.
+This book contains plain ASCII text only.
+If this book can be signed, the server accepts AutoBook packets.

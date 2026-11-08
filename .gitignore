@@ -1,0 +1,34 @@
+# Python
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+*.egg-info/
+build/
+dist/
+
+# Java / Gradle
+.gradle/
+autobook/build/
+autobook/run/
+autobook/.gradle/
+autobook/logs/
+autobook-26/build/
+autobook-26/run/
+autobook-26/.gradle/
+autobook-26/logs/
+
+# Local intermediates
+work/
+
+# LLM secrets
+bookforge/keys/llm_api_key.txt
+bookforge/keys/*.key
+
+# IDE
+.idea/
+*.iml
+
+# OS
+.DS_Store
+Thumbs.db

@@ -1,0 +1,13 @@
+{
+  "version": 1,
+  "titleBase": "样例",
+  "pageLimit": 100,
+  "sourceHash": "787444105a351ad3029bc880a3c783a096d9403b44e553692ba43e3e2fb2b005",
+  "segments": [
+    {
+      "index": 1,
+      "chapter": "第一章 测试",
+      "text": "这是第一段，用来验证中文分页。\n这是第二段，包含标点、数字 123 和英文 ASCII。"
+    }
+  ]
+}

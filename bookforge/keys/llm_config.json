@@ -1,0 +1,33 @@
+{
+  "base_url": "https://api.deepseek.com",
+  "model": "deepseek-flash",
+  "timeout": 120,
+  "max_chars": 4000,
+  "temperature": 0,
+  "max_tokens": 8192,
+  "thinking": false,
+  "glossary": "keys/glossary.txt",
+  "min_confidence": "high",
+  "pricing": {
+    "currency": "CNY",
+    "inputPerMillion": 2.0,
+    "outputPerMillion": 3.0,
+    "offpeakFactor": 0.5
+  },
+  "profiles": {
+    "三体1": {
+      "glossary": "keys/glossary-三体1.txt",
+      "style": "本书为中文科幻小说《三体1》。保留作者用词、语序、科技术语与人物名；不要统一标点风格；只修复明确的转录错误。",
+      "max_chars": 4000,
+      "max_tokens": 8192,
+      "thinking": false
+    },
+    "西游记": {
+      "glossary": "keys/glossary-西游记.txt",
+      "style": "本书为《西游记》校注本。保留回目、诗词、文言用词、异体字/古字、通假字、古今字、古今异义、脚注编号（如 (1)、(77)）、校注与宗教术语；不要统一标点、断句或改写原文；不得因不符合现代汉语用法就把通假字、古今异义当作错字；只报告可确定的错字、缺字、乱码、重复；不确定时不要报告。",
+      "max_chars": 4000,
+      "max_tokens": 8192,
+      "thinking": false
+    }
+  }
+}

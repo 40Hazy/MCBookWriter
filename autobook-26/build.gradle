@@ -1,0 +1,70 @@
+plugins {
+    id 'net.fabricmc.fabric-loom' version '1.19.4'
+    id 'maven-publish'
+}
+
+version = project.mod_version
+group = project.maven_group
+
+def javaRelease = (project.findProperty('java_release') ?: '25').toString().toInteger()
+
+base {
+    archivesName = project.archives_base_name
+}
+
+sourceSets {
+    main {
+        java.srcDirs = ['../autobook/src/main/java', '../autobook/src/main/java-26']
+        resources.srcDirs = ['../autobook/src/main/resources']
+    }
+    test {
+        java.srcDirs = ['../autobook/src/test/java']
+    }
+}
+
+repositories {
+    mavenCentral()
+    maven {
+        name = 'Fabric'
+        url = 'https://maven.fabricmc.net/'
+    }
+}
+
+dependencies {
+    minecraft "com.mojang:minecraft:${project.minecraft_version}"
+    implementation "net.fabricmc:fabric-loader:${project.loader_version}"
+    implementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
+
+    testImplementation 'org.junit.jupiter:junit-jupiter:5.11.4'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher:1.11.4'
+}
+
+processResources {
+    inputs.property 'version', project.version
+    inputs.property 'minecraft', project.minecraft_version
+    inputs.property 'java', javaRelease
+    inputs.property 'loader', project.loader_version
+    filesMatching('fabric.mod.json') {
+        expand(
+            'version': project.version,
+            'minecraft': project.minecraft_version,
+            'java': javaRelease,
+            'loader': project.loader_version
+        )
+    }
+}
+
+tasks.withType(JavaCompile).configureEach {
+    options.release = javaRelease
+}
+
+java {
+    withSourcesJar()
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(javaRelease)
+    }
+}
+
+tasks.test {
+    useJUnitPlatform()
+}
