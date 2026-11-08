@@ -25,6 +25,7 @@ body { font-family: "Microsoft YaHei", "Segoe UI", sans-serif; font-size: 13px;
 h1 { font-size: 20px; color: #1a4a8a; border-bottom: 2px solid #1a4a8a;
      padding-bottom: 4px; }
 h2 { font-size: 15px; color: #1a4a8a; margin-top: 18px; margin-bottom: 6px; }
+h3 { font-size: 13px; color: #1a4a8a; margin-top: 12px; margin-bottom: 4px; }
 code { font-family: Consolas, monospace; background: #f0f0f0; padding: 1px 4px; }
 table { border-collapse: collapse; }
 th, td { border: 1px solid #ccc; padding: 3px 8px; text-align: left; }
@@ -118,7 +119,8 @@ punctuation ≤10；可在 profile 的 <code>max_delta</code> 中调整。</li>
 <li>游戏内常用命令：<code>/autobook add &lt;任务名&gt;</code>、
 <code>/autobook start</code>、<code>/autobook pause</code>、
 <code>/autobook resume</code>、<code>/autobook cancel</code>、
-<code>/autobook list</code>、<code>/autobook help</code>。</li>
+<code>/autobook jobs</code>、<code>/autobook list</code>、
+<code>/autobook help</code>。</li>
 <li>印刷需要背包中有“书与笔”；耗尽会自动暂停，补给后自动继续。</li>
 </ul>
 
@@ -147,17 +149,64 @@ api.deepseek.com 并同步修改 model。</td></tr>
 {{PATH_INFO}}
 
 <h2>9. 游戏联动</h2>
-<ul>
-<li>安装 job 时会同时写入 <code>autobook/jobs/&lt;书名&gt;.meta.json</code>，
-记录书数、页数、是否已校订与生成器版本；同名覆盖会保留
+<p class="note">联动是文件级的：BookForge 负责生成与安装 job，AutoBook 负责读取
+job 并写入运行状态。两侧互不控制进程，也不修改对方的文件。</p>
+
+<h3>9.1 联动文件</h3>
+<table>
+<tr><th>文件</th><th>写入方</th><th>用途</th></tr>
+<tr><td><code>autobook/jobs/&lt;书名&gt;.json</code></td><td>BookForge</td>
+<td>任务正文（job schema v1）</td></tr>
+<tr><td><code>autobook/jobs/&lt;书名&gt;.meta.json</code></td><td>BookForge</td>
+<td>书数、页数、是否已校订、生成器版本</td></tr>
+<tr><td><code>autobook/status.json</code></td><td>AutoBook</td>
+<td>运行状态、进度、校验本数（1 秒节流、5 秒心跳）</td></tr>
+<tr><td><code>autobook/run.json</code></td><td>AutoBook</td>
+<td>运行进度与恢复数据；BookForge 只读不写</td></tr>
+</table>
+
+<h3>9.2 联调步骤</h3>
+<ol>
+<li>确认 <code>mods/</code> 中放入了与游戏版本匹配的
+<code>autobook-0.12.0-mc&lt;版本&gt;.jar</code>，并已安装 Fabric Loader / Fabric API。</li>
+<li>“配置”页选择游戏目录（包含 <code>mods/</code> 的目录），点击“刷新联动状态”；
+版本行应显示 <code>AutoBook 0.12.0（autobook-...jar）</code>。</li>
+<li>“生成”页导入书稿并生成 job；回到“配置”页选择 job.json 与游戏目录，
+点击“安装到 autobook/jobs”。</li>
+<li>确认 <code>autobook/jobs/</code> 下同时出现 <code>&lt;书名&gt;.json</code> 与
+<code>&lt;书名&gt;.meta.json</code>；同名覆盖时会多出
 <code>&lt;书名&gt;.json.bak</code>。</li>
-<li>AutoBook 0.12.0 起会原子写入 <code>autobook/status.json</code>；
-“配置”页的“游戏联动（只读）”区点击“刷新联动状态”即可查看运行进度、
-校验本数与更新时间，并显示 mods/ 中的 AutoBook jar 版本。</li>
-<li>游戏内用 <code>/autobook jobs</code> 查看已安装任务及元数据；缺少元数据的
-旧 job 仍可正常运行，只是书数/页数显示为未知。</li>
-<li>若提示 jar 版本过低、当前任务文件缺失或 job version 不兼容，请换用
-BookForge 安装的 v1 job，并确认 AutoBook 版本不低于 0.12.0。</li>
+<li>进入游戏执行 <code>/autobook jobs</code>，核对任务名、书数/页数、是否已校订
+与每本上限。</li>
+<li>执行 <code>/autobook add &lt;任务名&gt;</code> 与 <code>/autobook start</code>；
+回到 BookForge 点“刷新联动状态”，应看到运行状态、<code>已完成/总数</code>
+与校验本数。</li>
+</ol>
+
+<h3>9.3 状态与版本提示</h3>
+<table>
+<tr><th>界面提示</th><th>含义</th><th>处理</th></tr>
+<tr><td><code>AutoBook 0.12.0（...jar）</code></td><td>检测到兼容版本</td>
+<td>可正常联动</td></tr>
+<tr><td>低于 0.12.0</td><td>旧 jar 不写 meta/status</td>
+<td>换用 0.12.0 及以上的 jar</td></tr>
+<tr><td>未检测到 AutoBook jar</td><td><code>mods/</code> 中没有 autobook*.jar</td>
+<td>确认游戏目录是否选错，或安装对应版本 jar</td></tr>
+<tr><td>未读取到 status.json</td><td>该版本尚未在游戏内运行，或从未 start</td>
+<td>进游戏运行一次后点刷新</td></tr>
+<tr><td>当前任务缺失 / 不兼容</td><td>job 文件被删除，或 job version 不为 1</td>
+<td>用 BookForge 重新生成并安装任务</td></tr>
+</table>
+
+<h3>9.4 只读边界</h3>
+<ul>
+<li>BookForge 只读 <code>jobs/</code> 与 <code>status.json</code>，不创建、不修改
+<code>run.json</code>、<code>state/</code> 与游戏存档。</li>
+<li>start / pause / resume / stop 仍只由玩家在游戏内执行，外部无法控制运行。</li>
+<li>缺少 <code>.meta.json</code> 的旧 job 仍可正常运行，只是
+<code>/autobook jobs</code> 的书数/页数显示为未知；建议重新安装以获得完整元数据。</li>
+<li>安装与状态读取均为原子操作：写入时先写临时文件再替换，读取失败会降级为
+“未读取到”，不会破坏已有任务。</li>
 </ul>
 """
 

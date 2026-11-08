@@ -338,6 +338,14 @@ powershell -ExecutionPolicy Bypass -File .\scripts\build-gui.ps1 -InstallDeps
 
 安装完成后，在游戏内执行 `/autobook add <任务名>`，再 `/autobook start`。运行期间 AutoBook 会原子写入 `autobook/status.json`；在 BookForge“配置”页的“游戏联动（只读）”区点击“刷新联动状态”即可查看进度、校验本数与 jar 版本。BookForge 只读该文件，不写 `run.json`，也不代替游戏内 start/pause/stop。
 
+发布前联调自测清单：
+
+1. `mods/` 中只保留与当前游戏版本匹配的 0.12.0 jar；`/autobook jobs` 能列出 BookForge 安装的任务，并显示书数/页数与是否已校订。
+2. `autobook/jobs/` 中任务同时存在 `.json` 与 `.meta.json`；对同一任务重复安装一次，确认生成 `.json.bak` 且任务仍可启动。
+3. 游戏内 `start` 后，BookForge 刷新应显示运行状态、`已完成/总数` 与校验本数；`pause`/`resume`/`stop` 后状态随之变化。
+4. 临时移走任务文件时，BookForge 应提示“当前任务缺失”，而不是崩溃或改写其他文件。
+5. 换成低于 0.12.0 的旧 jar 时，BookForge 版本行应提示不支持联动，`/autobook jobs` 也不会出现。
+
 ## 4. 配置文件
 
 `autobook/config.json`：

@@ -437,10 +437,18 @@ class MainWindow(QMainWindow):
         link_layout = QVBoxLayout(link_group)
         self.link_version_label = QLabel("尚未读取 AutoBook 版本。")
         self.link_version_label.setWordWrap(True)
+        self.link_version_label.setToolTip(
+            "从 游戏目录\\mods\\autobook*.jar 的 fabric.mod.json 读取版本；"
+            "低于 0.12.0 时不支持任务元数据与运行状态联动。"
+        )
         self.link_status_label = QLabel("")
         self.link_status_label.setWordWrap(True)
         self.link_status_label.setTextInteractionFlags(
             Qt.TextInteractionFlag.TextSelectableByMouse
+        )
+        self.link_status_label.setToolTip(
+            "只读显示 游戏目录\\autobook\\status.json：运行状态、当前任务、"
+            "已完成/总数、校验本数与更新时间；运行中约每秒更新，最长 5 秒心跳。"
         )
         link_row = QHBoxLayout()
         self.link_refresh_button = QPushButton("刷新联动状态")
