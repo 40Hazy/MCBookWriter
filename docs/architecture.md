@@ -45,17 +45,18 @@
 | `keymanagement.py` | key 路径解析（env/profile/全局/默认）、掩码状态、原子保存与清除、最小连接测试 |
 | `patch.py` | 补丁本地硬校验、重叠检测、按偏移应用、统一 diff 生成 |
 | `linkage.py` | 与 AutoBook 的文件级联动：job 安装与 `.meta.json`、`status.json` 读取、jar 版本兼容判断 |
-| `gui/` | PySide6 桌面界面：生成、LLM 核验、补丁审阅、配置、帮助五个标签页；含 workers/models/settings/help_content |
+| `gui/` | PySide6 桌面界面：生成、LLM 核验、补丁审阅、上架到游戏、配置、帮助六个标签页；含 workers/models/settings/help_content |
 
 设计原则：非空白字符尽量保持不丢；只删除明确的广告/导航行；对疑似误删给出警告而不是静默处理。
 
-### 桌面 GUI（BookForge 0.7.0）
+### 桌面 GUI（BookForge 0.7.1）
 
 ```text
 生成        prepare_input → job/report/import
 LLM 核验    ReviewWorker → review_job(progress/cancel) → llm_report/llm_patch
 补丁审阅    ApplyWorker → apply_patches(selected) → reviewed/job + diff + patch_apply
-配置        profile 编辑 / 测试连接 / 安装 job（含 meta） / 联动只读区 / 最近路径
+上架到游戏  安装 job（含 meta） / 联动只读状态 / 最近路径
+配置        profile 编辑 / API key / 测试连接
 帮助        内置离线 HTML（help_content）+ 动态版本/路径信息 + 打开目录按钮
 ```
 
@@ -220,16 +221,19 @@ SETTLE（默认 15 tick，可配置）
 - 公共 API 在 1.21.5+ 才存在：`Inventory.getSelectedSlot/getSelectedItem/setSelectedSlot`；1.21.4 及更早版本不兼容。
 - 原先的 `BookEditScreenAccessor` mixin 未被使用，且在 1.21.5 找不到 `saveChanges`，已删除；关闭书本界面直接使用 `client.setScreen(null)`。
 - 构建工具：Gradle 9.8.2、Loom 1.19.4、JDK 25（26.1.2 必需；1.21.x 仍以 Java 21 为目标）。
-- `scripts/build-multi.ps1` 对 1.21.x 临时改写 `gradle.properties` 的 `minecraft_version/fabric_version/loader_version/java_release`；对 26.1.2 运行 `autobook-26/` 工程；输出 `dist/autobook-<mod>-mc<mc>.jar`，结束后恢复原文件。
-- 版本依赖表：
+- `scripts/build-multi.ps1` 对 1.21.x 临时改写 `gradle.properties` 的 `minecraft_version/fabric_version/loader_version/loader_min_version/java_release`；对 26.1.2 运行 `autobook-26/` 工程；输出 `dist/autobook-<mod>-mc<mc>.jar`，结束后恢复原文件。
+- `fabric.mod.json` 的 `fabricloader` 依赖由独立的 `loader_min_version` 注入（0.12.1 起），与各版本 Fabric API 声明的 Loader 底线对齐，不再与构建所用 Loader 版本绑定。
+- 版本依赖表（Fabric Loader 列为声明下限）：
 
 | Minecraft | Fabric Loader | Fabric API | Java |
 | --- | --- | --- | --- |
-| 1.21.5 | 0.16.14+ | 0.128.2+1.21.5 | 21 |
-| 1.21.6 | 0.16.14+ | 0.128.2+1.21.6 | 21 |
-| 1.21.7 | 0.16.14+ | 0.129.0+1.21.7 | 21 |
-| 1.21.8 | 0.16.14+ | 0.136.1+1.21.8 | 21 |
-| 26.1.2 | 0.20.1 | 0.155.3+26.1.2 | 25 |
+| 1.21.5 | 0.16.10+ | 0.128.2+1.21.5 | 21 |
+| 1.21.6 | 0.16.13+ | 0.128.2+1.21.6 | 21 |
+| 1.21.7 | 0.16.13+ | 0.129.0+1.21.7 | 21 |
+| 1.21.8 | 0.16.13+ | 0.136.1+1.21.8 | 21 |
+| 1.21.11 | 0.17.3+ | 0.141.6+1.21.11 | 21 |
+| 26.1 / 26.1.1 / 26.1.2 | 0.18.4+ | 0.155.3+26.1.2 | 25 |
+| 26.2 | 0.18.4+ | 0.161.0+26.2 | 25 |
 
 ### 跨章节打包
 
@@ -353,7 +357,7 @@ segment 2 pages 1..3 ┴→ book 1 (pageLimit=6)
 }
 ```
 
-### 联动文件（AutoBook 0.12.0 / BookForge 0.7.0）
+### 联动文件（AutoBook 0.12.1 / BookForge 0.7.0）
 
 ```text
 autobook/jobs/<任务>.json        BookForge 写，AutoBook 读（job schema v1）

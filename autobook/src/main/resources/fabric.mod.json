@@ -12,7 +12,7 @@
     ]
   },
   "depends": {
-    "fabricloader": ">=${loader}",
+    "fabricloader": ">=${loader_min}",
     "minecraft": "${minecraft}",
     "java": ">=${java}",
     "fabric-api": "*"

@@ -11,16 +11,17 @@ $propertiesPath = Join-Path $autobook "gradle.properties"
 $dist = Join-Path $root "dist"
 
 # Fabric API version for each supported Minecraft version.
+# loaderMin: declared fabricloader dependency floor in fabric.mod.json (matches the Fabric API floor).
 $fabricApi = @{
-    "26.2" = @{ api = "0.161.0+26.2"; loader = "0.20.1"; java = 25; unobfuscated = $true }
-    "26.1.2" = @{ api = "0.155.3+26.1.2"; loader = "0.20.1"; java = 25; unobfuscated = $true }
-    "26.1.1" = @{ api = "0.155.3+26.1.2"; loader = "0.20.1"; java = 25; unobfuscated = $true }
-    "26.1" = @{ api = "0.155.3+26.1.2"; loader = "0.20.1"; java = 25; unobfuscated = $true }
-    "1.21.11" = @{ api = "0.141.6+1.21.11"; loader = "0.20.1"; java = 21 }
-    "1.21.8" = @{ api = "0.136.1+1.21.8"; loader = "0.16.14"; java = 21 }
-    "1.21.7" = @{ api = "0.129.0+1.21.7"; loader = "0.16.14"; java = 21 }
-    "1.21.6" = @{ api = "0.128.2+1.21.6"; loader = "0.16.14"; java = 21 }
-    "1.21.5" = @{ api = "0.128.2+1.21.5"; loader = "0.16.14"; java = 21 }
+    "26.2" = @{ api = "0.161.0+26.2"; loader = "0.20.1"; loaderMin = "0.18.4"; java = 25; unobfuscated = $true }
+    "26.1.2" = @{ api = "0.155.3+26.1.2"; loader = "0.20.1"; loaderMin = "0.18.4"; java = 25; unobfuscated = $true }
+    "26.1.1" = @{ api = "0.155.3+26.1.2"; loader = "0.20.1"; loaderMin = "0.18.4"; java = 25; unobfuscated = $true }
+    "26.1" = @{ api = "0.155.3+26.1.2"; loader = "0.20.1"; loaderMin = "0.18.4"; java = 25; unobfuscated = $true }
+    "1.21.11" = @{ api = "0.141.6+1.21.11"; loader = "0.20.1"; loaderMin = "0.17.3"; java = 21 }
+    "1.21.8" = @{ api = "0.136.1+1.21.8"; loader = "0.16.14"; loaderMin = "0.16.13"; java = 21 }
+    "1.21.7" = @{ api = "0.129.0+1.21.7"; loader = "0.16.14"; loaderMin = "0.16.13"; java = 21 }
+    "1.21.6" = @{ api = "0.128.2+1.21.6"; loader = "0.16.14"; loaderMin = "0.16.13"; java = 21 }
+    "1.21.5" = @{ api = "0.128.2+1.21.5"; loader = "0.16.14"; loaderMin = "0.16.10"; java = 21 }
 }
 
 $original = [System.IO.File]::ReadAllText($propertiesPath)
@@ -51,6 +52,7 @@ try {
             $text26 = $text26 -replace "(?m)^minecraft_version=(.+)$", "minecraft_version=$mc"
             $text26 = $text26 -replace "(?m)^fabric_version=(.+)$", "fabric_version=$($spec.api)"
             $text26 = $text26 -replace "(?m)^loader_version=(.+)$", "loader_version=$($spec.loader)"
+            $text26 = $text26 -replace "(?m)^loader_min_version=(.+)$", "loader_min_version=$($spec.loaderMin)"
             $text26 = $text26 -replace "(?m)^java_release=(.+)$", "java_release=$($spec.java)"
             [System.IO.File]::WriteAllText(
                 $properties26,
@@ -76,6 +78,7 @@ try {
             $text = $original -replace "(?m)^minecraft_version=(.+)$", "minecraft_version=$mc"
             $text = $text -replace "(?m)^fabric_version=(.+)$", "fabric_version=$($spec.api)"
             $text = $text -replace "(?m)^loader_version=(.+)$", "loader_version=$($spec.loader)"
+            $text = $text -replace "(?m)^loader_min_version=(.+)$", "loader_min_version=$($spec.loaderMin)"
             $text = $text -replace "(?m)^java_release=(.+)$", "java_release=$($spec.java)"
             Write-Properties $text
 

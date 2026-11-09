@@ -221,12 +221,20 @@ Copy-Item (Join-Path $root "CHANGELOG.md") $stage
 New-Item -ItemType Directory -Force -Path (Join-Path $stage "examples") | Out-Null
 Copy-Item (Join-Path $root "docs\examples\*") (Join-Path $stage "examples")
 
+$jarInfo = @{
+    "1.21.5" = "Java 21、Fabric Loader 0.16.10+"
+    "1.21.6" = "Java 21、Fabric Loader 0.16.13+"
+    "1.21.7" = "Java 21、Fabric Loader 0.16.13+"
+    "1.21.8" = "Java 21、Fabric Loader 0.16.13+"
+    "1.21.11" = "Java 21、Fabric Loader 0.17.3+"
+    "26.1" = "Java 25、Fabric Loader 0.18.4+"
+    "26.1.1" = "Java 25、Fabric Loader 0.18.4+"
+    "26.1.2" = "Java 25、Fabric Loader 0.18.4+"
+    "26.2" = "Java 25、Fabric Loader 0.18.4+"
+}
 $jarLines = ($Versions | ForEach-Object {
-    if ($_ -eq "26.1.2") {
-        "   - 26.1.2：autobook-$autoVer-mc26.1.2.jar（需要 Java 25、Fabric Loader 0.20.1、Fabric API 0.155.3+26.1.2）"
-    } else {
-        "   - $_：autobook-$autoVer-mc$_.jar（需要 Java 21、Fabric Loader 0.16.14+、对应版本的 Fabric API）"
-    }
+    $req = if ($jarInfo.ContainsKey($_)) { $jarInfo[$_] } else { "对应版本的 Fabric Loader/Fabric API" }
+    "   - $_：autobook-$autoVer-mc$_.jar（需要 $req、Fabric API 对应版本）"
 }) -join "`r`n"
 
 $install = @"

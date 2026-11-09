@@ -43,13 +43,13 @@ processResources {
     inputs.property 'version', project.version
     inputs.property 'minecraft', project.minecraft_version
     inputs.property 'java', javaRelease
-    inputs.property 'loader', project.loader_version
+    inputs.property 'loader_min', project.findProperty('loader_min_version') ?: project.loader_version
     filesMatching('fabric.mod.json') {
         expand(
             'version': project.version,
             'minecraft': project.minecraft_version,
             'java': javaRelease,
-            'loader': project.loader_version
+            'loader_min': project.findProperty('loader_min_version') ?: project.loader_version
         )
     }
 }

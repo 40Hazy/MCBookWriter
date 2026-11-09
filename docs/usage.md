@@ -3,7 +3,7 @@
 ## 1. 环境准备
 
 - Minecraft Java 版 1.21.5–1.21.11 或 26.1–26.2（每个版本使用对应的 AutoBook jar 与 Fabric API）
-- Fabric Loader（1.21.5–1.21.8 用 0.16.14+；1.21.11 与 26.x 用 0.20.1）
+- Fabric Loader（1.21.5 需 0.16.10+；1.21.6–1.21.8 需 0.16.13+；1.21.11 需 0.17.3+；26.x 需 0.18.4+）
 - Fabric API（1.21.5/1.21.6 用 0.128.2，1.21.7 用 0.129.0，1.21.8 用 0.136.1，1.21.11 用 0.141.6+1.21.11，26.1/26.1.1/26.1.2 用 0.155.3+26.1.2，26.2 用 0.161.0+26.2）
 - Java 21（1.21.x）；Java 25（26.x）
 - Python 3.11+（仅预处理需要）
@@ -269,7 +269,7 @@ bookforge-gui
 
 也可以直接运行 `.\.venv\Scripts\python.exe -m bookforge.gui.app`。
 
-当前版本（BookForge 0.7.0）的 GUI 包含 5 个标签页：
+当前版本（BookForge 0.7.1）的 GUI 包含 6 个标签页：
 
 1. **生成**
    - 选择输入文件（txt/epub/azw3/mobi/fb2/docx 等）与输出目录。
@@ -284,15 +284,17 @@ bookforge-gui
    - 加载或自动接收 `llm_patch.json`；默认只勾选 high 置信度。
    - 可逐条勾选/取消，应用选中补丁。
    - 显示统一 diff、被拒绝补丁原因，并生成 `reviewed/job.json`、`diff.patch`、`patch_apply.json`。
-4. **配置**
+4. **上架到游戏**
+   - 顶部按 ① 选 job.json 与游戏目录 → ② 安装 → ③ 游戏内 add/start → ④ 查看状态 的顺序给出提示。
+   - 把 job.json 安装到游戏目录的 `autobook/jobs/`；同时写入 `<任务名>.meta.json` 并校验 schema、书名与目录，同名覆盖保留 `.bak`。
+   - “运行状态（只读）”区：切换到该页或点击“刷新联动状态”时读取 `autobook/status.json`，显示运行状态、进度、校验本数、更新时间与 AutoBook jar 版本；版本过低或当前 job 不兼容时给出提示。
+5. **配置**
    - 选择全局或每本书 profile，编辑 `model/base_url/max_chars/max_tokens/temperature/thinking/min_confidence/glossary/style/key_file`。
    - API key 区：输入后“保存密钥”、清除密钥、测试连接；只显示掩码、来源与文件路径。
    - 保存写回 `keys/llm_config.json`；“测试连接”发送一条最小请求。
-   - 把 job.json 安装到游戏目录的 `autobook/jobs/`；同时写入 `<任务名>.meta.json` 并校验 schema、书名与目录，同名覆盖保留 `.bak`。
-   - “游戏联动（只读）”区：点击“刷新联动状态”读取 `autobook/status.json`，显示运行状态、进度、校验本数、更新时间与 AutoBook jar 版本；版本过低或当前 job 不兼容时给出提示。
    - 记住最近使用的输入/输出/游戏路径。
    - 游戏内 `/autobook ui` 配置界面底部有“说明”按钮，可打开分页帮助页。
-5. **帮助**
+6. **帮助**
    - 离线内置 HTML：快速开始、支持格式、LLM 核验流程、补丁安全规则、密钥配置、安装到游戏、常见错误。
    - “版本与路径信息”区动态显示版本号、Python、配置/密钥/术语表实际路径、key 状态（掩码）与当前游戏目录；切换到该页自动刷新。
    - 提供“打开配置目录”“打开日志目录”（游戏 logs）“打开游戏目录”三个按钮。
@@ -318,7 +320,7 @@ powershell -ExecutionPolicy Bypass -File .\scripts\build-gui.ps1 -InstallDeps
 
 ```text
 %APPDATA%\.minecraft\
-├─ mods\autobook-0.12.0.jar
+├─ mods\autobook-0.12.1.jar
 └─ autobook\
    ├─ jobs\三体1.json
    ├─ jobs\三体1.meta.json （BookForge 安装时写入，可选）
@@ -328,8 +330,8 @@ powershell -ExecutionPolicy Bypass -File .\scripts\build-gui.ps1 -InstallDeps
    └─ state\               （进度文件）
 ```
 
-- 将 `dist/autobook-0.12.0.jar` 放入 `mods/`（对应 Minecraft 1.21.8）。
-- 其他 Minecraft 版本：运行 `scripts/build-multi.ps1`，从 `dist/` 选择 `autobook-0.12.0-mc<版本>.jar`。当前支持 1.21.5、1.21.6、1.21.7、1.21.8、1.21.11、26.1、26.1.1、26.1.2、26.2。
+- 将 `dist/autobook-0.12.1.jar` 放入 `mods/`（对应 Minecraft 1.21.8）。
+- 其他 Minecraft 版本：运行 `scripts/build-multi.ps1`，从 `dist/` 选择 `autobook-0.12.1-mc<版本>.jar`。当前支持 1.21.5、1.21.6、1.21.7、1.21.8、1.21.11、26.1、26.1.1、26.1.2、26.2。
 - 推荐用 BookForge GUI 的“安装任务到游戏目录”：安装前会校验 job schema、书名长度与游戏目录，并同时写入 `<任务名>.meta.json`；同名覆盖会保留 `<任务名>.json.bak`。
 - 也可将生成的 `job.json` 复制为 `autobook/jobs/三体1.json`；手工复制的旧 job 没有 meta，`/autobook jobs` 仍会列出，只是书数/页数显示为未知。
 - 也可直接把 `dist/jobs/autobook-test.json` 复制过去做连通性测试。
@@ -340,7 +342,7 @@ powershell -ExecutionPolicy Bypass -File .\scripts\build-gui.ps1 -InstallDeps
 
 发布前联调自测清单：
 
-1. `mods/` 中只保留与当前游戏版本匹配的 0.12.0 jar；`/autobook jobs` 能列出 BookForge 安装的任务，并显示书数/页数与是否已校订。
+1. `mods/` 中只保留与当前游戏版本匹配的 0.12.1 jar；`/autobook jobs` 能列出 BookForge 安装的任务，并显示书数/页数与是否已校订。
 2. `autobook/jobs/` 中任务同时存在 `.json` 与 `.meta.json`；对同一任务重复安装一次，确认生成 `.json.bak` 且任务仍可启动。
 3. 游戏内 `start` 后，BookForge 刷新应显示运行状态、`已完成/总数` 与校验本数；`pause`/`resume`/`stop` 后状态随之变化。
 4. 临时移走任务文件时，BookForge 应提示“当前任务缺失”，而不是崩溃或改写其他文件。
@@ -698,10 +700,10 @@ powershell -ExecutionPolicy Bypass -File .\scripts\build-multi.ps1 -SkipTests
 
 产物：
 
-- `dist/autobook-0.12.0.jar`：由 `build.ps1` 生成，对应 `gradle.properties` 当前版本（1.21.8）。
-- `dist/autobook-0.12.0-mc<版本>.jar`：由 `build-multi.ps1` 生成，每个 jar 的 `fabric.mod.json` 精确匹配对应 Minecraft 版本。
+- `dist/autobook-0.12.1.jar`：由 `build.ps1` 生成，对应 `gradle.properties` 当前版本（1.21.8）。
+- `dist/autobook-0.12.1-mc<版本>.jar`：由 `build-multi.ps1` 生成，每个 jar 的 `fabric.mod.json` 精确匹配对应 Minecraft 版本。
 - 26.x（26.1、26.1.1、26.1.2、26.2）使用独立的 `autobook-26/` 工程与 Loom 1.19.4（unobfuscated），需要 JDK 25 与 Gradle 9.8.2；1.21.x 仍以 Java 21 为目标。
-- `build.ps1 -GameDir` 只安装当前 `gradle.properties` 对应版本（默认 1.21.8）；26.x 请手动复制 `dist/autobook-0.12.0-mc26.x.jar`。
+- `build.ps1 -GameDir` 只安装当前 `gradle.properties` 对应版本（默认 1.21.8）；26.x 请手动复制 `dist/autobook-0.12.1-mc26.x.jar`。
 
 发布构建（版本一致性校验、全部测试、多版本 jar、GUI 打包、验收与组包一次完成）：
 

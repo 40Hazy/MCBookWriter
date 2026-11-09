@@ -88,6 +88,7 @@ class MainWindow(QMainWindow):
         self.tabs.addTab(self._build_prepare_tab(), "生成")
         self.tabs.addTab(self._build_review_tab(), "LLM 核验")
         self.tabs.addTab(self._build_patch_tab(), "补丁审阅")
+        self.tabs.addTab(self._build_publish_tab(), "上架到游戏")
         self.tabs.addTab(self._build_config_tab(), "配置")
         self.tabs.addTab(self._build_help_tab(), "帮助")
         self.tabs.currentChanged.connect(self._on_tab_changed)
@@ -327,6 +328,82 @@ class MainWindow(QMainWindow):
         self.patch_out_button.clicked.connect(self._browse_patch_out)
         return widget
 
+    def _build_publish_tab(self) -> QWidget:
+        widget = QWidget()
+        self._publish_tab = widget
+        layout = QVBoxLayout(widget)
+
+        hint = QLabel(
+            "常用流程：① 选择 job.json 与游戏目录 ② 安装到 autobook/jobs "
+            "③ 游戏内 /autobook add <书名> 后 start ④ 回到本页刷新查看运行状态。"
+        )
+        hint.setWordWrap(True)
+        layout.addWidget(hint)
+
+        install_group = QGroupBox("1. 安装任务到游戏目录")
+        install_layout = QGridLayout(install_group)
+        self.install_job_edit = QLineEdit()
+        self.install_job_edit.setToolTip("要安装到游戏的 job.json（通常是 reviewed/job.json）。")
+        self.install_job_button = QPushButton("浏览")
+        self.install_game_edit = QLineEdit()
+        self.install_game_edit.setToolTip("包含 mods/ 与 config/ 的 Minecraft 目录。")
+        self.install_game_button = QPushButton("浏览")
+        self.install_button = QPushButton("安装到 autobook/jobs")
+        self.install_button.setToolTip(
+            "复制 job 到 游戏目录\\autobook\\jobs\\<书名>.json；游戏内 /autobook add 后使用。"
+        )
+        install_layout.addWidget(QLabel("job.json"), 0, 0)
+        install_layout.addWidget(self.install_job_edit, 0, 1)
+        install_layout.addWidget(self.install_job_button, 0, 2)
+        install_layout.addWidget(QLabel("游戏目录"), 1, 0)
+        install_layout.addWidget(self.install_game_edit, 1, 1)
+        install_layout.addWidget(self.install_game_button, 1, 2)
+        install_layout.addWidget(self.install_button, 2, 1, 1, 2)
+        self.install_status = QLabel("尚未安装任务。")
+        self.install_status.setWordWrap(True)
+        self.install_status.setTextInteractionFlags(
+            Qt.TextInteractionFlag.TextSelectableByMouse
+        )
+        install_layout.addWidget(self.install_status, 3, 0, 1, 3)
+        layout.addWidget(install_group)
+
+        link_group = QGroupBox("2. 运行状态（只读）")
+        link_layout = QVBoxLayout(link_group)
+        self.link_version_label = QLabel("尚未读取 AutoBook 版本。")
+        self.link_version_label.setWordWrap(True)
+        self.link_version_label.setToolTip(
+            "从 游戏目录\\mods\\autobook*.jar 的 fabric.mod.json 读取版本；"
+            "低于 0.12.0 时不支持任务元数据与运行状态联动。"
+        )
+        self.link_status_label = QLabel("")
+        self.link_status_label.setWordWrap(True)
+        self.link_status_label.setTextInteractionFlags(
+            Qt.TextInteractionFlag.TextSelectableByMouse
+        )
+        self.link_status_label.setToolTip(
+            "只读显示 游戏目录\\autobook\\status.json：运行状态、当前任务、"
+            "已完成/总数、校验本数与更新时间；运行中约每秒更新，最长 5 秒心跳。"
+        )
+        link_row = QHBoxLayout()
+        self.link_refresh_button = QPushButton("刷新联动状态")
+        self.link_refresh_button.setToolTip(
+            "读取 游戏目录\\autobook\\status.json 与 mods/ 中的 AutoBook jar 版本；"
+            "只读展示，不控制游戏内 start/pause/stop。"
+        )
+        link_row.addWidget(self.link_refresh_button)
+        link_row.addStretch(1)
+        link_layout.addWidget(self.link_version_label)
+        link_layout.addWidget(self.link_status_label)
+        link_layout.addLayout(link_row)
+        layout.addWidget(link_group)
+        layout.addStretch(1)
+
+        self.install_job_button.clicked.connect(self._browse_install_job)
+        self.install_game_button.clicked.connect(self._browse_game_dir)
+        self.install_button.clicked.connect(self._install_job)
+        self.link_refresh_button.clicked.connect(self._refresh_linkage)
+        return widget
+
     def _build_config_tab(self) -> QWidget:
         widget = QWidget()
         self._config_tab = widget
@@ -411,57 +488,6 @@ class MainWindow(QMainWindow):
         self.config_status = QLabel("")
         self.config_status.setWordWrap(True)
         layout.addWidget(self.config_status)
-
-        install_group = QGroupBox("安装任务到游戏目录")
-        install_layout = QGridLayout(install_group)
-        self.install_job_edit = QLineEdit()
-        self.install_job_edit.setToolTip("要安装到游戏的 job.json（通常是 reviewed/job.json）。")
-        self.install_job_button = QPushButton("浏览")
-        self.install_game_edit = QLineEdit()
-        self.install_game_edit.setToolTip("包含 mods/ 与 config/ 的 Minecraft 目录。")
-        self.install_game_button = QPushButton("浏览")
-        self.install_button = QPushButton("安装到 autobook/jobs")
-        self.install_button.setToolTip(
-            "复制 job 到 游戏目录\\autobook\\jobs\\<书名>.json；游戏内 /autobook add 后使用。"
-        )
-        install_layout.addWidget(QLabel("job.json"), 0, 0)
-        install_layout.addWidget(self.install_job_edit, 0, 1)
-        install_layout.addWidget(self.install_job_button, 0, 2)
-        install_layout.addWidget(QLabel("游戏目录"), 1, 0)
-        install_layout.addWidget(self.install_game_edit, 1, 1)
-        install_layout.addWidget(self.install_game_button, 1, 2)
-        install_layout.addWidget(self.install_button, 2, 1, 1, 2)
-        layout.addWidget(install_group)
-
-        link_group = QGroupBox("游戏联动（只读）")
-        link_layout = QVBoxLayout(link_group)
-        self.link_version_label = QLabel("尚未读取 AutoBook 版本。")
-        self.link_version_label.setWordWrap(True)
-        self.link_version_label.setToolTip(
-            "从 游戏目录\\mods\\autobook*.jar 的 fabric.mod.json 读取版本；"
-            "低于 0.12.0 时不支持任务元数据与运行状态联动。"
-        )
-        self.link_status_label = QLabel("")
-        self.link_status_label.setWordWrap(True)
-        self.link_status_label.setTextInteractionFlags(
-            Qt.TextInteractionFlag.TextSelectableByMouse
-        )
-        self.link_status_label.setToolTip(
-            "只读显示 游戏目录\\autobook\\status.json：运行状态、当前任务、"
-            "已完成/总数、校验本数与更新时间；运行中约每秒更新，最长 5 秒心跳。"
-        )
-        link_row = QHBoxLayout()
-        self.link_refresh_button = QPushButton("刷新联动状态")
-        self.link_refresh_button.setToolTip(
-            "读取 游戏目录\\autobook\\status.json 与 mods/ 中的 AutoBook jar 版本；"
-            "只读展示，不控制游戏内 start/pause/stop。"
-        )
-        link_row.addWidget(self.link_refresh_button)
-        link_row.addStretch(1)
-        link_layout.addWidget(self.link_version_label)
-        link_layout.addWidget(self.link_status_label)
-        link_layout.addLayout(link_row)
-        layout.addWidget(link_group)
         layout.addStretch(1)
 
         self.profile_combo.currentIndexChanged.connect(self._load_profile)
@@ -469,10 +495,6 @@ class MainWindow(QMainWindow):
         self.key_clear_button.clicked.connect(self._clear_api_key)
         self.config_save_button.clicked.connect(self._save_config)
         self.config_test_button.clicked.connect(self._test_connection)
-        self.install_job_button.clicked.connect(self._browse_install_job)
-        self.install_game_button.clicked.connect(self._browse_game_dir)
-        self.install_button.clicked.connect(self._install_job)
-        self.link_refresh_button.clicked.connect(self._refresh_linkage)
         return widget
 
     def _build_help_tab(self) -> QWidget:
@@ -512,7 +534,7 @@ class MainWindow(QMainWindow):
     def _on_tab_changed(self, index: int) -> None:
         if self.tabs.widget(index) is self._help_tab:
             self._refresh_help()
-        elif self.tabs.widget(index) is self._config_tab:
+        elif self.tabs.widget(index) is self._publish_tab:
             self._refresh_linkage()
 
     def _refresh_help(self) -> None:
@@ -529,9 +551,9 @@ class MainWindow(QMainWindow):
             QMessageBox.information(
                 self,
                 "未设置游戏目录",
-                "请先在“配置”页选择游戏目录（包含 mods/ 与 config/）。",
+                "请先在“上架到游戏”页选择游戏目录（包含 mods/ 与 config/）。",
             )
-            self.tabs.setCurrentWidget(self._config_tab)
+            self.tabs.setCurrentWidget(self._publish_tab)
             return None
         return Path(text)
 
@@ -1168,7 +1190,7 @@ class MainWindow(QMainWindow):
         if outcome.backup_path is not None:
             details.append(f"已覆盖同名任务，旧文件备份为：{outcome.backup_path}")
         details.extend(["", f"游戏内执行：/autobook add {title}", "然后用 /autobook start 开始。"])
-        self.config_status.setText(f"已安装: {outcome.destination}")
+        self.install_status.setText(f"已安装: {outcome.destination}")
         self._append_log(
             f"已安装: {outcome.destination}（{outcome.book_count} 本 / {outcome.total_pages} 页）"
         )

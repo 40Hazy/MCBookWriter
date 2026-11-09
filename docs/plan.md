@@ -16,7 +16,8 @@
 | P4.3 | LLM 质量校准、diff、全量三体1、游戏内验证 | 进行中：三体1 已验 3/13，剩余异常路径与配置验证 |
 | P5 | 多书适配、任务队列、配置 UI、发布 | 已完成（1.21.5–1.21.11 + 26.1–26.2，0.10.0 统一运行流水线，P5.5 发布准备完成） |
 | P6 | BookForge 桌面 GUI（导入/核验/补丁） | 已完成 G1–G5（BookForge 0.5.0） |
-| P7 | 帮助、API key 管理与 AutoBook/BookForge 联动 | 已完成：P7.1–P7.4 与 P5.5 发布准备完成（AutoBook 0.12.0 / BookForge 0.7.0） |
+| P7 | 帮助、API key 管理与 AutoBook/BookForge 联动 | 已完成：P7.1–P7.6 与 P5.5 发布准备完成（AutoBook 0.12.1 / BookForge 0.7.1） |
+| P8 | 界面美化（游戏内配置/帮助界面 + BookForge GUI） | 计划中：素材已就位（`assets/images/`），待施工 |
 
 ## P0：脚手架
 
@@ -673,3 +674,76 @@ bookforge/workflow.py  # CLI/GUI 共用 prepare_input
 
 - 四个新 jar 编译与打包通过（`dist/autobook-0.11.0-mc1.21.11` / `-mc26.1` / `-mc26.1.1` / `-mc26.2`）。
 - 待办：四个版本真实客户端试跑（写书、内容校验、`/autobook ui` 与帮助页），见 `docs/release.md` 4.2。
+
+### P5.7 Fabric Loader 版本下限放宽（AutoBook 0.12.1，已完成）
+
+背景：用户反馈部分版本的 jar 要求 Fabric Loader 过新（1.21.11 / 26.x 统一要求 0.20.1，26.1.1 + Loader 0.19.3 的实例无法加载）。
+
+根因：`fabric.mod.json` 的 `depends.fabricloader` 直接复用构建所用 `loader_version`，而非模组实际需要的最低版本。模组代码只使用 `FabricLoader.getInstance()` 的 `getGameDir/getConfigDir/getModContainer` 等长期稳定 API，真正的下限由 Fabric API 的声明决定。
+
+改动（2026-11-09）：
+
+- 新增 `loader_min_version` 构建属性（`autobook/`、`autobook-26/` 的 `gradle.properties`），`fabric.mod.json` 注入 `">=${loader_min}"`，与构建版本解耦。
+- 下限与各版本 Fabric API 的 Loader 底线对齐：1.21.5 ≥0.16.10；1.21.6/1.21.7/1.21.8 ≥0.16.13；1.21.11 ≥0.17.3；26.1/26.1.1/26.1.2/26.2 ≥0.18.4。
+- `build-multi.ps1` 版本矩阵新增 `loaderMin`，随目标版本改写。
+
+验收：9 个版本 jar 重新构建，逐一检查 `fabric.mod.json` 的 `fabricloader` 下限与矩阵一致。
+
+### P7.5 补给暂停自动恢复后的状态修复（AutoBook 0.12.1，已完成）
+
+现象：缺书与笔导致自动暂停后，补书上来自动恢复，随后执行 `/autobook pause` 提示“当前运行不在 RUNNING 状态”。
+
+根因：自动暂停发生时 `run.json` 已写入 `paused`；补书后是 `BookWriter` 自行从 `PAUSED` 恢复，`RunRunner.tick` 因运行状态非 `running` 提前返回，未把 `run.json`/`job.status` 同步回 `running`，命令层按旧状态拒绝 pause。
+
+改动（2026-11-09）：
+
+- `RunRunner.tick` 在 `paused` 分支增加 `resumeIfWriterContinued`：若当前任务的写书器已脱离 `PAUSED`（`jobName` 匹配），把任务与运行状态同步回 `running` 并清理 `reason`。
+- 手动暂停、确认暂停、校验暂停都不会自行恢复，因此该同步只对补给暂停生效，原有语义不变。
+
+### P7.6 “上架到游戏”页（BookForge 0.7.1，已完成）
+
+背景：安装任务与运行状态检查原先埋在“配置”页底部，实际操作时要来回切页。
+
+改动（2026-11-09）：
+
+- 新增“上架到游戏”标签页（“补丁审阅”与“配置”之间），按操作顺序组织：流程提示 → 安装 job（选择 job.json / 游戏目录 / 安装按钮 / 安装结果）→ 运行状态（只读）。
+- 安装完成后自动刷新状态；切到该页也自动刷新。
+- “配置”页只保留 profile、API key 与连接测试；`_game_dir` 缺省引导改为跳转到“上架到游戏”页。
+- 帮助页的安装/联动步骤文案与 jar 示例（0.12.1）同步更新。
+
+## P8：界面美化（计划中）
+
+背景：游戏内配置界面与帮助页目前是纯原版控件 + 文字，BookForge GUI 为默认 Qt 风格。素材已收集在 `assets/images/`：
+
+| 素材 | 内容 | 拟用途 |
+| --- | --- | --- |
+| `book.png`（约 830×1024） | 书页背景纹理 | 游戏内配置/帮助界面背景面板、BookForge 帮助页插图 |
+| `Recipe_Book_Gui.png`（约 900×1024） | 银边深色面板 | 游戏内界面边框/分区面板 |
+| `Chiseled_Bookshelf.png` | 雕纹书架方块渲染图 | BookForge 窗口图标与页眉、模组列表图标候选 |
+| `Written_Book.png` / `Writable_Book.png` / `Knowledge_Book.png` / `Book_Cyan.png` | 成书/书与笔/知识之书/青书物品图标 | 游戏内界面标题图标、BookForge 标签页图标、模组 `icon.png` 候选 |
+
+### P8.1 AutoBook 游戏内美化
+
+- 模组图标：`fabric.mod.json` 目前缺 `icon` 字段；从 `Written_Book.png` 派生 128×128 `assets/autobook/icon.png`，在 Mod 列表/Mod Menu 中立即可见。
+- 配置界面（`AutoBookConfigScreen`）：书页纹理背景面板 + 标题行左侧书架/成书小图标；控件保留原版 `Button`/`EditBox` 以保证键盘导航与可读性，只替换背景与点缀。
+- 帮助界面（`AutoBookHelpScreen`）：同一套书页背景，保持纯文本排版。
+- 双实现路径同步：`java-21`（`GuiGraphics.blit`）与 `java-26`（`GuiGraphicsExtractor`）的渲染差异由 compat 层吸收，纹理资源共用。
+- 纹理管线：素材原图过大，需缩放到 GUI 适用分辨率（≤256×256）后放入 `autobook/src/main/resources/assets/autobook/textures/gui/`；派生图入库，构建不再依赖图像处理工具。
+
+### P8.2 BookForge GUI 美化
+
+- 窗口与任务栏图标（`Chiseled_Bookshelf.png` 派生多尺寸 .ico/.png）。
+- 主窗口页眉横幅（书架图 + 标题），五个标签页配物品图标。
+- 深色 Qt 样式表，与书页米色素材协调；注意高分屏缩放下不模糊。
+- `BookForge.spec` 需把派生素材打进 `_internal`，并验证 exe 内可加载。
+
+### 施工顺序与验收
+
+1. 先做素材派生与模组图标（改动小、立竿见影），再做游戏内界面背景，最后 BookForge GUI。
+2. 验收：1.21.8 与 26.1.2 真实客户端截图对比（配置界面/帮助页）；BookForge GUI 在 100%/150% 缩放下截图检查；JUnit 与 pytest 全量回归。
+
+### 非目标（P8）
+
+- 不改任何交互逻辑、配置项与命令行为。
+- 不引入 Cloth Config 等第三方 UI 库，不新增运行时依赖。
+- 素材为 Minecraft 衍生图，仅限本模组/工具内使用，不用于对外宣传物料。

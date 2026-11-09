@@ -384,6 +384,11 @@ public final class RunRunner {
 
     public void tick(Minecraft client) {
         RunState run = state();
+        if (RunState.RUN_PAUSED.equals(run.status)) {
+            resumeIfWriterContinued(run);
+            statusStore.tick(run);
+            return;
+        }
         if (!RunState.RUN_RUNNING.equals(run.status)) {
             statusStore.tick(run);
             return;
@@ -487,6 +492,35 @@ public final class RunRunner {
             builder.append(" - ").append(run.reason);
         }
         return builder.toString();
+    }
+
+    /**
+     * 补给暂停（BookWriter 的 SUPPLY 暂停）在检测到空书后由写书器自行恢复，
+     * 此时运行状态仍停在 PAUSED，需要同步回 RUNNING，否则 /autobook pause 会报“不在 RUNNING”。
+     * 手动/确认/校验暂停不会自行恢复，因此这里只在写书器已脱离 PAUSED 时才同步。
+     */
+    private void resumeIfWriterContinued(RunState run) {
+        RunJob job = run.current();
+        if (job == null || !RunState.JOB_PAUSED.equals(job.status)) {
+            return;
+        }
+        BookWriter.Progress progress = BookWriter.get().progress();
+        if (!job.name.equals(progress.jobName())) {
+            return;
+        }
+        switch (progress.state()) {
+            case PAUSED, IDLE, DONE, ERROR -> {
+                return;
+            }
+            default -> {
+            }
+        }
+        job.status = RunState.JOB_RUNNING;
+        run.status = RunState.RUN_RUNNING;
+        run.reason = "";
+        armed = false;
+        saveQuietly();
+        AutoBookClient.LOG.info("AutoBook: run auto-resumed after supply pause");
     }
 
     private void startCurrent(RunState run, RunJob job) {

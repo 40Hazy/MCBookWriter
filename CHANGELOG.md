@@ -1,5 +1,33 @@
 # 更新日志
 
+## 0.12.1 — 2026-11-09
+
+兼容性修复：放宽 `fabricloader` 依赖下限，支持非最新版 Fabric Loader（有用户反馈 1.21.11 / 26.x 要求 Loader 0.20.1 过新）。
+
+修复：
+
+- `fabric.mod.json` 的 `fabricloader` 依赖不再绑定构建所用 Loader 版本，改由独立的 `loader_min_version` 属性注入，并与各版本 Fabric API 声明的 Loader 底线对齐：
+  - 1.21.5：≥0.16.10（原 0.16.14）
+  - 1.21.6 / 1.21.7 / 1.21.8：≥0.16.13（原 0.16.14）
+  - 1.21.11：≥0.17.3（原 0.20.1）
+  - 26.1 / 26.1.1 / 26.1.2 / 26.2：≥0.18.4（原 0.20.1，26.1.1 + Loader 0.19.3 的实例现可加载）
+- `build-multi.ps1` 版本矩阵新增 `loaderMin` 字段，构建时注入 `loader_min_version`。
+- 模组代码只使用 `FabricLoader.getInstance()` 的 `getGameDir/getConfigDir/getModContainer` 等长期稳定 API，低于构建版本的 Loader 上可正常运行。
+
+修复（运行状态）：
+
+- 修复“缺书与笔自动暂停 → 补上书后自动恢复 → `/autobook pause` 提示不在 running 状态”：补给暂停由写书器自行恢复后，`run.json` 的运行状态仍停在 `paused`，命令层据此拒绝暂停。`RunRunner.tick` 现在会在暂停态检查写书器是否已脱离 `PAUSED`，若是则把任务与运行状态同步回 `running`；手动/确认/校验暂停不会自行恢复，行为不变。
+
+## BookForge 0.7.1 — 2026-11-09
+
+界面调整：把常用的“安装任务”与“运行状态检查”从配置页抽出，汇总为独立的“上架到游戏”页。
+
+- 新增“上架到游戏”标签页（位于“补丁审阅”与“配置”之间），按操作顺序排列：顶部流程提示 → ① 选择 job.json 与游戏目录并安装到 `autobook/jobs` → ② 运行状态（只读）：AutoBook jar 版本与 `status.json` 进度。
+- 安装完成后在该页显示安装结果（目标路径），并自动刷新联动状态；切换到该页时也会自动刷新。
+- “配置”页仅保留 LLM profile、API key 与连接测试，减少无关项干扰。
+- 帮助页的安装/联动步骤文案同步改为“上架到游戏”页，AutoBook jar 示例更新为 0.12.1。
+- 版本号升至 0.7.1。
+
 ## 0.12.0 — 2026-11-08
 
 P7.4：AutoBook ↔ BookForge 文件级联动。只通过 `autobook/` 下的文件契约协作，不引入网络服务；`run.json` 仍由 AutoBook 独占写入。

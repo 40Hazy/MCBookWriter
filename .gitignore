@@ -21,6 +21,9 @@ autobook-26/logs/
 # Local intermediates
 work/
 
+# Local reference assets (decompiled Minecraft jar, ~80MB; 仅保留设计素材)
+assets/26.1.1-Fabric 0.19.3/
+
 # LLM secrets
 bookforge/keys/llm_api_key.txt
 bookforge/keys/*.key
