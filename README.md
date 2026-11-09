@@ -5,14 +5,16 @@ Minecraft 批量写书工具链，由两个独立组件组成：
 - **BookForge（Python）**：读取 txt/EPUB/FB2/DOCX 等书稿，完成编码识别、正文清洗、章节识别、分段，生成可校验的 `job.json`。
 - **AutoBook（Fabric 客户端模组）**：读取 `job.json`，按 Minecraft 书本实际排版分页、自动续本，循环写入并签名，支持进度保存与断点续写。
 
-当前版本：**AutoBook 0.12.1**、**BookForge 0.7.1**。支持 Minecraft **1.21.5–1.21.11** 与 **26.1、26.1.1、26.1.2、26.2**，每个版本使用对应的 AutoBook jar。单本写入已在 1.21.8 服务器实测通过；0.3.0 改进跨章节打包与慢速重试，0.4.0 增加标点断书与页数配置，0.5.0 增加内容校验、失败自恢复与配置命令，0.6.0 增加多任务队列，0.7.0 增加游戏内配置界面并支持 Minecraft 1.21.5–1.21.8，0.8.0 增加 Minecraft 26.1.x（26.1.2）支持，0.8.1 修复 `/autobook ui` 不显示界面，0.8.2 修复配置界面文字不可见，0.8.3 将数据目录改为游戏目录下的 `autobook/` 并在加载模组时自动创建，0.9.0 增加整书 SHA-256 摘要校验与已验证本数统计，0.11.0 合并单本与队列为统一运行流水线（add/start/pause/resume/cancel/stop/remove/retry），0.11.0 增加 `/autobook help` 与游戏内说明页，0.12.0 增加任务元数据、`/autobook jobs` 与 `status.json` 联动，0.12.1 放宽 Fabric Loader 版本下限；BookForge 0.3.1 增加电子书导入、LLM 抽样核验与补丁 diff，0.4.0 增加桌面 GUI（导入与生成 job），0.4.1 增加成本预估、profile 查看并修正古籍通假字误报，0.5.0 完成 LLM 报告/补丁审阅、配置编辑与 PyInstaller 打包，0.6.0 增加 API key 的 GUI/CLI 管理与 profile key_file，0.7.0 增加安装元数据、安装校验与 GUI 游戏联动区，0.7.1 将任务安装与运行状态汇总到“上架到游戏”页。
+当前版本：**AutoBook 0.13.0**、**BookForge 0.7.1**。支持 Minecraft **1.21.5–1.21.11** 与 **26.1、26.1.1、26.1.2、26.2**，每个版本使用对应的 AutoBook jar。单本写入已在 1.21.8 服务器实测通过；0.3.0 改进跨章节打包与慢速重试，0.4.0 增加标点断书与页数配置，0.5.0 增加内容校验、失败自恢复与配置命令，0.6.0 增加多任务队列，0.7.0 增加游戏内配置界面并支持 Minecraft 1.21.5–1.21.8，0.8.0 增加 Minecraft 26.1.x（26.1.2）支持，0.8.1 修复 `/autobook ui` 不显示界面，0.8.2 修复配置界面文字不可见，0.8.3 将数据目录改为游戏目录下的 `autobook/` 并在加载模组时自动创建，0.9.0 增加整书 SHA-256 摘要校验与已验证本数统计，0.11.0 合并单本与队列为统一运行流水线（add/start/pause/resume/cancel/stop/remove/retry），0.11.0 增加 `/autobook help` 与游戏内说明页，0.12.0 增加任务元数据、`/autobook jobs` 与 `status.json` 联动，0.12.1 放宽 Fabric Loader 版本下限，0.13.0 增加 F8 配置/ F9 暂停继续快捷键与 Mod Menu 配置入口；BookForge 0.3.1 增加电子书导入、LLM 抽样核验与补丁 diff，0.4.0 增加桌面 GUI（导入与生成 job），0.4.1 增加成本预估、profile 查看并修正古籍通假字误报，0.5.0 完成 LLM 报告/补丁审阅、配置编辑与 PyInstaller 打包，0.6.0 增加 API key 的 GUI/CLI 管理与 profile key_file，0.7.0 增加安装元数据、安装校验与 GUI 游戏联动区，0.7.1 将任务安装与运行状态汇总到“上架到游戏”页。
 
 ## 核心能力
 
 - 按游戏内像素宽度分页：每行 114 px、每页 14 行、每页最多 1023 字符。
 - 跨章节打包：页会连续装满每本（默认最多 100 页），不再把短章节单独装订，显著减少空书消耗。
 - 标点断书：优先让每本的最后一句在句末标点（。！？…等）处结束，避免书与书之间截断句子。
-- 每本页数、断句开关、写入节奏都可在 `config.json` 中调整，也可用 `/autobook config` 或 `/autobook ui` 界面修改。
+- 每本页数、断句开关、写入节奏都可在 `config.json` 中调整，也可用 `/autobook config`、`/autobook ui` 或 F8 快捷键修改。
+- 游戏内快捷键：F8 打开配置界面，F9 暂停/继续当前运行（可在按键绑定中修改）。
+- Mod Menu 支持：安装 Mod Menu 后可直接从模组列表打开配置页（1.21.5 / 1.21.6 / 1.21.11 提供入口）。
 - 内容校验：签名后回读成书页数与文本，检测截断/乱码；不一致时暂停并记录。
 - 失败自恢复：多次未确认时自动长等待并模拟“打开/关闭书本页面”，再重试，减少人工 resume。
 - LLM 核验/补丁（BookForge）：可选用 OpenAI 兼容接口核验正文；报告模式只出问题，补丁模式输出 `find/replace`，经本地硬校验后生成 reviewed job。
@@ -104,8 +106,8 @@ powershell -ExecutionPolicy Bypass -File .\scripts\build-gui.ps1 -InstallDeps
 ### 2. 安装模组
 
 1. 安装 Fabric Loader（1.21.5 需 0.16.10+，1.21.6–1.21.8 需 0.16.13+，1.21.11 需 0.17.3+，26.x 需 0.18.4+）、与游戏版本匹配的 Fabric API、Java 21（26.x 需 Java 25）。
-2. 将 `dist/autobook-0.12.1.jar`（Minecraft 1.21.8）放入客户端 `mods/`。
-   - 其他版本：运行 `scripts/build-multi.ps1` 生成 `autobook-0.12.1-mc<版本>.jar`，安装与游戏版本匹配的那个。
+2. 将 `dist/autobook-0.13.0.jar`（Minecraft 1.21.8）放入客户端 `mods/`。
+   - 其他版本：运行 `scripts/build-multi.ps1` 生成 `autobook-0.13.0-mc<版本>.jar`，安装与游戏版本匹配的那个。
    - 当前支持 1.21.5、1.21.6、1.21.7、1.21.8、1.21.11，以及 26.1、26.1.1、26.1.2、26.2。
    - 1.21.11：Java 21、Fabric API 0.141.6+1.21.11。
    - 26.1 / 26.1.1 / 26.1.2：Java 25、Fabric API 0.155.3+26.1.2。
@@ -156,7 +158,7 @@ powershell -ExecutionPolicy Bypass -File .\scripts\build.ps1 -GameDir "F:\Minecr
 powershell -ExecutionPolicy Bypass -File .\scripts\release.ps1
 ```
 
-`build.ps1 -GameDir` 安装的是当前 `gradle.properties` 对应版本（默认 1.21.8）。26.x 请手动复制 `dist/autobook-0.12.1-mc26.x.jar` 到该客户端 `mods/`。
+`build.ps1 -GameDir` 安装的是当前 `gradle.properties` 对应版本（默认 1.21.8）。26.x 请手动复制 `dist/autobook-0.13.0-mc26.x.jar` 到该客户端 `mods/`。
 
 安装脚本会创建 `autobook/jobs`、`state` 目录，并提示任务数量。
 

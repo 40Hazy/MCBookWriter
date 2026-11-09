@@ -247,7 +247,8 @@ $jarLines
 2. 把 jar 放进游戏目录的 mods\。
 3. 启动一次游戏，自动生成 autobook\ 目录；把 job.json 放进 autobook\jobs\。
 4. 游戏内输入 /autobook help 查看完整帮助；/autobook start <任务名> 开始写书。
-5. 试跑：把 examples\sample_job.json 复制为 autobook\jobs\样例.json，准备 3 本空书和一份书与笔，
+5. 快捷键：F8 打开配置界面，F9 暂停/继续当前运行；安装 Mod Menu 时也可从模组列表打开配置。
+6. 试跑：把 examples\sample_job.json 复制为 autobook\jobs\样例.json，准备 3 本空书和一份书与笔，
    执行 /autobook start 样例。预期约 3 本、每本约 5 页，日志出现 verified，无 CONFIRM/VERIFY 暂停。
    examples\sample_source.txt 是对应的源文本，可用 bookforge prepare 复现同一个 job。
 

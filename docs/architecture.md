@@ -134,7 +134,7 @@ LLM 核验    ReviewWorker → review_job(progress/cancel) → llm_report/llm_pa
 | `AutoBookConfigScreen` | 游戏内配置界面：开关按钮 + 整数输入框，保存复用 `AutoBookConfig.set`（1.21/26.1 各一份渲染实现） |
 | `HelpText` | 帮助内容：概览与 start/run/job/jobs/cancel/config/verify/recover 主题，命令与 UI 共用 |
 | `AutoBookHelpScreen` | 分页说明页：按宽度换行、上一页/下一页/返回（1.21/26.1 各一份渲染实现） |
-| `compat/ClientCompat` / `ClientCommandsCompat` | 1.21 与 26.1 的客户端 API 差异封装 |
+| `compat/ClientCompat` / `ClientCommandsCompat` / `KeyBindingsCompat` | 1.21 与 26.1 的客户端 API 差异封装（按键分类在 26.x 改为 `KeyMapping.Category`） |
 | `AutoBookConfig` | 读取/保存 `autobook/config.json`，支持 `/autobook config` |
 
 ### 写入状态机
@@ -357,7 +357,7 @@ segment 2 pages 1..3 ┴→ book 1 (pageLimit=6)
 }
 ```
 
-### 联动文件（AutoBook 0.12.1 / BookForge 0.7.0）
+### 联动文件（AutoBook 0.13.0 / BookForge 0.7.1）
 
 ```text
 autobook/jobs/<任务>.json        BookForge 写，AutoBook 读（job schema v1）

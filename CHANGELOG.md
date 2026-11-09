@@ -1,5 +1,23 @@
 # 更新日志
 
+## 0.13.0 — 2026-11-09
+
+模组体验：新增快捷键与 Mod Menu 配置入口，无需依赖命令即可打开配置或暂停/继续。
+
+新增：
+
+- 快捷键（可在“选项 → 控制 → 按键绑定 → AutoBook”自定义）：
+  - F8：打开 AutoBook 配置界面（与 `/autobook ui` 同一入口）。
+  - F9：当前运行在跑时暂停，已暂停时继续；无任务时动作栏提示。
+- Mod Menu 支持：安装 Mod Menu 后，模组列表的“配置”按钮直接打开同一个配置界面。Mod Menu 为可选依赖，未安装时集成类不会加载。按目标版本注入：
+  - 1.21.5（Mod Menu 14.0.2）、1.21.6（15.0.2）、1.21.11（17.0.1）
+  - 1.21.7 / 1.21.8 与 26.x 暂无 Mod Menu 对应版本，不注入入口。
+- 按键名与分类的中英文资源（`assets/autobook/lang/zh_cn.json`、`en_us.json`）。
+
+兼容：
+
+- 26.x 的按键分类改为 `KeyMapping.Category`、Fabric API 模块改为 `fabric-key-mapping-api-v1`，由 `KeyBindingsCompat` 在 `java-21` / `java-26` 双实现中吸收。
+
 ## 0.12.1 — 2026-11-09
 
 兼容性修复：放宽 `fabricloader` 依赖下限，支持非最新版 Fabric Loader（有用户反馈 1.21.11 / 26.x 要求 Loader 0.20.1 过新）。

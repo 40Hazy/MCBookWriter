@@ -747,3 +747,37 @@ bookforge/workflow.py  # CLI/GUI 共用 prepare_input
 - 不改任何交互逻辑、配置项与命令行为。
 - 不引入 Cloth Config 等第三方 UI 库，不新增运行时依赖。
 - 素材为 Minecraft 衍生图，仅限本模组/工具内使用，不用于对外宣传物料。
+
+## P9：AutoBook 模组功能增强（P9.1/P9.2 已完成，其余计划中）
+
+目标：让模组脱离“必须敲命令”的使用方式，补齐常见的客户端模组体验。
+
+### P9.1 快捷键（已完成）
+
+- 新增两个按键绑定，可在“选项 → 控制 → 按键绑定 → AutoBook”中自定义：
+  - `key.autobook.open_config`（默认 F8）：无论当前界面，打开 AutoBook 配置界面（复用 `UiScreens.requestConfigScreen`，与 `/autobook ui` 同一入口）。
+  - `key.autobook.toggle_run`（默认 F9）：当前运行在跑时暂停，已暂停时继续；无运行任务时动作栏提示。
+- 仅处理未被其他界面抢占的按键（`KeyMapping.consumeClick()`），动作栏反馈走 `ClientCompat.actionBar`，两套源码集共用。
+- 中英文按键名/分类资源：`assets/autobook/lang/zh_cn.json`、`en_us.json`。
+
+### P9.2 Mod Menu 支持（已完成）
+
+- `fabric.mod.json` 可选注入 `modmenu` 入口，`AutoBookModMenuIntegration` 实现 `ModMenuApi#getModConfigScreenFactory`，在 Mod Menu 中提供“配置”按钮直接打开同一个配置屏。
+- Mod Menu 保持**可选依赖**：未安装时该入口不会被请求，集成类不会被加载，不影响启动。
+- 按目标版本注入（`modmenu_version` → `modCompileOnly` + 条件源码目录 + entrypoint 模板）：
+  - 1.21.5：14.0.2；1.21.6：15.0.2；1.21.11：17.0.1
+  - 1.21.7 / 1.21.8、26.x：Mod Menu 未发布对应版本，不注入入口（jar 正常使用，仅无 Mod Menu 按钮）
+- 构建不引入硬依赖：`modmenu_version` 为空时不加仓库依赖、不编译集成类、entrypoint 不写入。
+
+### P9.3 后续候选（计划）
+
+- HUD 角标：当前任务、完成/总数、暂停原因（可开关）。
+- 空书低于阈值时动作栏预警，配合红石补给。
+- 状态提示国际化（现有界面文案为硬编码中文）。
+- 与 P8 共用模组图标与视觉素材。
+
+### 验收（P9）
+
+- 1.21.8 / 1.21.11 / 26.x 真实客户端：F8 打开配置、F9 暂停/继续、无任务时提示正确。
+- 安装 Mod Menu 的 1.21.5/1.21.6/1.21.11 客户端：Mod 列表出现 AutoBook；“配置”按钮打开配置屏；未安装 Mod Menu 时无异常日志。
+- JUnit 与 pytest 全量回归，`release.ps1` 版本一致性与产物校验通过。

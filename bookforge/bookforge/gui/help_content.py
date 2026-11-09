@@ -168,9 +168,9 @@ job 并写入运行状态。两侧互不控制进程，也不修改对方的文�
 <h3>9.2 联调步骤</h3>
 <ol>
 <li>确认 <code>mods/</code> 中放入了与游戏版本匹配的
-<code>autobook-0.12.1-mc&lt;版本&gt;.jar</code>，并已安装 Fabric Loader / Fabric API。</li>
+<code>autobook-0.13.0-mc&lt;版本&gt;.jar</code>，并已安装 Fabric Loader / Fabric API。</li>
 <li>“上架到游戏”页选择游戏目录（包含 <code>mods/</code> 的目录），点击“刷新联动状态”；
-版本行应显示 <code>AutoBook 0.12.1（autobook-...jar）</code>。</li>
+版本行应显示 <code>AutoBook 0.13.0（autobook-...jar）</code>。</li>
 <li>“生成”页导入书稿并生成 job；回到“上架到游戏”页选择 job.json 与游戏目录，
 点击“安装到 autobook/jobs”。</li>
 <li>确认 <code>autobook/jobs/</code> 下同时出现 <code>&lt;书名&gt;.json</code> 与

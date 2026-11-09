@@ -9,7 +9,7 @@
   "entrypoints": {
     "client": [
       "com.mcbookwriter.autobook.AutoBookClient"
-    ]
+    ]${modmenu_entry}
   },
   "depends": {
     "fabricloader": ">=${loader_min}",
